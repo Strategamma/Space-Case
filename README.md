@@ -1,6 +1,6 @@
 # Space Case
 
-Self-contained game repository. Create your GitHub repository from this `game` folder, so `package.json` and `render.yaml` are at the repository root. Do not select its parent Space Case folder.
+Self-contained game repository at `/Users/farzan/Documents/Codex/Space Case/game/Space Case`. Select this folder in GitHub Desktop; `package.json` and `render.yaml` are directly at the repository root.
 
 ## Run locally
 
@@ -26,7 +26,7 @@ For a manually created web service:
 - Environment: `NODE_ENV=production`, `NODE_VERSION=24`, and `DATABASE_URL` set to the Render PostgreSQL internal connection URL.
 - Keep one service instance; active rooms are held in memory and saved to the database.
 
-If you instead commit the parent directory as the repository, set Render's Root Directory to `game` for a manual service. The parent is not the recommended repository root.
+Leave Render's Root Directory blank for this repository.
 
 Server entry point: `server/index.js`. Website entry point: `public/index.html`. Render serves the website and Socket.IO connection together at its HTTPS URL; no separate WebSocket URL is required. This package cannot be hosted as a working multiplayer game on GitHub Pages alone.
 
