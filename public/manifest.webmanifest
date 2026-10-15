@@ -1,0 +1,5 @@
+{
+  "id": "/", "name": "Space Case", "short_name": "Space Case", "description": "An in-person space social deduction game for 6–15 crew.",
+  "start_url": "/", "scope": "/", "display": "standalone", "background_color": "#071019", "theme_color": "#071019",
+  "icons": [{ "src": "/assets/icon-brand-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }, { "src": "/assets/icon-brand-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }, { "src": "/assets/icon-brand-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }]
+}
