@@ -1,37 +1,56 @@
 # Space Case
 
-Self-contained game repository at `/Users/farzan/Documents/Codex/Space Case/game/Space Case`. Select this folder in GitHub Desktop; `package.json` and `render.yaml` are directly at the repository root.
+A mobile-first, in-person social deduction PWA for **6–15 players**, built for Decadence Arcade. Play on separate phones, tablets or computers with an Internet connection. The full-stack Node service serves the game and its private Socket.IO connections from one origin.
 
-## Run locally
+## Development
 
-Requires Node.js 22 or newer.
+Requires Node **24.x**.
 
 ```sh
 npm ci
-npm start
+PORT=3047 npm start
 ```
 
-Open http://localhost:3000. Run `npm test` and `npm run check` to verify the game.
+Open http://localhost:3047. The default port without `PORT` is 3000. Create a voyage, choose an unclaimed avatar and share its boarding code. `/?preview` is a labelled visual gallery, not a live match.
 
-## Host on Render
+```sh
+npm run check
+npm test
+npm audit --omit=dev --audit-level=high
+```
 
-Connect this repository using a Render Blueprint (`render.yaml`). It defines one Node web service and a PostgreSQL database; review Render's plan costs before creating them.
+Tests cover role interactions, secret recipient projections, legal randomized dealing, real six-client full matches, fifteen-player/overseer onboarding, reconnect/restart, rematch, and the complete versioned PWA dependency graph. Browser/device and hosted acceptance results are recorded separately in `docs/RELEASE.md`.
 
-For a manually created web service:
+## Rules
 
-- Root Directory: leave blank when this folder is the repository root.
-- Build Command: `npm ci --omit=dev`
-- Start Command: `npm start`
-- Health Check Path: `/health`
-- Environment: `NODE_ENV=production`, `NODE_VERSION=24`, and `DATABASE_URL` set to the Render PostgreSQL internal connection URL.
-- Keep one service instance; active rooms are held in memory and saved to the database.
+- Captain can play with only their own private information, or oversee without a character, ballot or point.
+- Select player count plus **3, 4 or 5 Backup cadets**: possible cards left unused in secret. All candidates are public; dealt roles and actual team counts remain private. The dealer validates faction and provisional strength limits, then randomly assigns a legal deal.
+- All **30 characters** are implemented. My orders contains private starting information, phase-gated actions and timestamped reports. Script shows candidates, expandable rules and dark-cycle order.
+- Dark cycles resolve simultaneously. Dark cycle one has no kills; later, all living Hollow network members must agree on a victim. Thrall is excluded from that network. No consensus means no collective attack. Consensus locks Hollow orders and conceals their terminals without ending the shared timer.
+- Ship Intelligence resolves disruption, protection/control, observations, attacks, revival, casualty/neighbour analysis and private delivery. Dead recipients receive no new information. Research Assistant passively analyses current dark-cycle casualties, independently of the Xenobiologist, and requires public death-character reveals off.
+- Light cycles allow discussion, nomination and secret Execute/Spare ballots. Self-nominations are permitted. Half of living eligible voters, rounded up, qualifies; the unique highest qualifying total faces execution. Tied highest totals cancel execution. At most one execution per light cycle.
+- Crew win when no evil players remain alive. Hollow win at living parity, including Thrall. Every winning teammate scores one, dead teammates included. Scores persist through room rematches.
+- Captain disconnects pause play; connected crew can unanimously consent to succession. Living disconnects during dark cycles/ballots pause until reconnection. Server restarts recover rooms paused for reconnect.
 
-Leave Render's Root Directory blank for this repository.
+Details: `docs/PROJECT.md`, `docs/CARD_RULES.md`, `docs/INTERACTION_CONTRACT.md`. Crew-only selection with secret bot-added Hollow is **not part of this release**.
 
-Server entry point: `server/index.js`. Website entry point: `public/index.html`. Render serves the website and Socket.IO connection together at its HTTPS URL; no separate WebSocket URL is required. This package cannot be hosted as a working multiplayer game on GitHub Pages alone.
+## Render deployment
 
-Without `DATABASE_URL`, room snapshots use `.data/rooms.json`. Render's default filesystem is temporary, so use PostgreSQL for persistence across restarts/deployments. Room recovery still requires players to reconnect.
+Use the repository root containing `package.json` and `render.yaml`. Leave Render’s **Root Directory blank**. The Blueprint defines one Node service and a private PostgreSQL database; review the displayed hosting cost before provisioning.
 
-Dependencies, local room snapshots, environment secrets, and generated output are excluded by `.gitignore`. Tests are included for validation; development dependencies are omitted by the Render build.
+- Build: `npm ci --omit=dev`
+- Start: `npm start`
+- Health: `/health` (checks database connectivity)
+- Runtime: Node 24; exactly **one** server instance
+- Environment: `NODE_ENV=production`, `DATABASE_URL` from the colocated database; Render supplies `PORT`
+- Optional: `DATABASE_SSL=true` only for a database endpoint requiring trusted TLS. Prefer Render’s internal database URL.
 
-This package has not yet been deployed or verified on Render.
+Production refuses to start without PostgreSQL. `.data/rooms.json` is a local-development fallback. Secrets and saved rooms must never be committed. Boarding passes are random per-seat credentials; callsigns and `arcadeName` are editable display-name hints, never identity.
+
+`npm run test:postgres` requires `TEST_DATABASE_URL` pointing to a dedicated database whose name contains `test`. It verifies isolated room saves and production server restart recovery. GitHub Actions provisions an isolated PostgreSQL service for this check.
+
+See `docs/RELEASE.md` for rollout, rollback and acceptance checks. A PWA caches the shell; hosted multiplayer still requires Internet. App updates wait for existing tabs to close. Do not scale to multiple instances without adding shared room coordination.
+
+## Assets
+
+Original space artwork and portraits are included as optimized WebP. Bundled Space Grotesk uses the SIL Open Font License in `public/assets/FONT-LICENSE.txt`. Reduced motion is supported; terminal audio is opt-in. User-facing phases are light/dark cycles; legacy save/protocol identifiers remain stable.

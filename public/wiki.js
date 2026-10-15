@@ -1,4 +1,4 @@
-import { ROLES } from './roles.js?v=30';
+import { ROLES } from './roles.js?v=1.0.0';
 
 // Public rules only: never derive reference text from a player's private assignment.
 const interactions = {

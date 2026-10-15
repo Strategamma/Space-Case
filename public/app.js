@@ -1,8 +1,8 @@
-import { cycleText } from './cycles.js?v=38';
-import { ROLES, DEFAULT_SETTINGS, isHollow, canHunt } from './roles.js?v=38';
-import { CARD_LIMITS, factionLimits, poolError, poolSize, evilCount, randomPool, togglePoolRole, adjustPoolCopies } from './setup.js?v=38';
-import { NIGHT_ORDER, scriptOrder } from './script.js?v=38';
-import { ROLE_GUIDES } from './wiki.js?v=38';
+import { cycleText } from './cycles.js?v=1.0.0';
+import { ROLES, DEFAULT_SETTINGS, isHollow, canHunt } from './roles.js?v=1.0.0';
+import { CARD_LIMITS, factionLimits, poolError, poolSize, evilCount, randomPool, togglePoolRole, adjustPoolCopies } from './setup.js?v=1.0.0';
+import { NIGHT_ORDER, scriptOrder } from './script.js?v=1.0.0';
+import { ROLE_GUIDES } from './wiki.js?v=1.0.0';
 import { AVATARS } from './avatars.js';
 
 const $ = selector => document.querySelector(selector);
@@ -103,7 +103,7 @@ socket?.on('state', next => {
   if(dawn&&next.lastDeaths.length) showDawnDeaths();
   else if (old?.me.alive && !next.me.alive) showDeath();
   else if(dawn) toast('Light cycle transmission: nobody died.');
-  const returned = old && next.players.filter(p=>p.alive && old.players.some(q=>q.id===p.id && !q.alive));
+  const returned = old && next.phase!=='lobby' && next.players.filter(p=>p.alive && old.players.some(q=>q.id===p.id && !q.alive));
   if(returned?.length) toast(returned.map(p=>p.name).join(', ') + ' has returned.');
   if (next.phase === 'victory' && old?.phase !== 'victory') tone(true);
 });
@@ -212,6 +212,7 @@ function settingsForm() {
 const phaseNames = { lobby: 'Boarding', orders: 'Sealed orders', night: 'Dark cycle', discussion: 'Light cycle', nominations: 'Light cycle · Tribunal', voting: 'Light cycle · Ballot', aftermath: 'Light cycle · Aftermath', victory: 'Voyage complete' };
 function phaseHelp() {
   const s = state;
+  if(s.phase==='victory')return 'All secrets are out. Celebrate your side, then get the crew together for another voyage.';
   if (!s.me.playing) return s.phase === 'lobby' ? 'You are overseeing this voyage. The crew needs 6–15 players, excluding you.' : 'You are the non-playing Captain. Keep the voyage moving; do not share private information.';
   if (!s.me.alive) return 'Your signal is lost. Follow the voyage silently; you cannot speak, nominate, vote, or use abilities.';
   return { lobby: 'Gather your crew in the same room. Share the boarding code and prepare your duty roster.', orders: 'Open your sealed orders privately. Acknowledge them when you understand your mission.', night: 'Eyes on your own screen. Every crew member attends privately to their station.', discussion: 'Talk face to face. Compare stories, protect your information, and find the Hollow.', nominations: 'Tell the Captain who you nominate. Self-nominations are allowed.', voting: 'Choose Execute or Spare. Your ballot is secret and cannot be changed.', aftermath: 'The tribunal has ended. Take a breath before the next dark cycle.', victory: 'All secrets are out. Celebrate your side, then get the crew together for another voyage.' }[s.phase];

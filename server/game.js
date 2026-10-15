@@ -51,7 +51,7 @@ function validateSettings(room, next) {
     roles[key] = n;
   }
   if (roles.engineer === 1) fail('Linked Engineers need at least two candidate cards, or zero.');
-  if ((roles.observer || roles.assistant) && !roles.xenobiologist) fail('The Officer and Assistant need a Xenobiologist in play.');
+  if (roles.observer && !roles.xenobiologist) fail('The Observatory Officer needs a possible Xenobiologist.');
   const count = crew(room).length + (next.playing ? 1 : 0) - (player(room, room.host).playing ? 1 : 0);
   if (count > 15) fail('All fifteen berths are occupied.');
   const error = poolError(next.playerCount, roles, next.reveal, next.spareCards??3); if (error) fail(error);

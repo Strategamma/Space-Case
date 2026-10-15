@@ -1,0 +1,29 @@
+# Runtime character rules
+
+All 28 identities in public/roles.js are implemented. Original roster descriptions are in EXPANDED_ROSTER.md; complete target/timing/collision intent is in INTERACTION_CONTRACT.md. The implementation is server/abilities.js, with tests/abilities.test.js and the existing game/moderator/transport suites.
+
+## Information and controls
+
+My orders is the private card, action console and inbox. Starting identities/unused-card knowledge are delivered only after deliberate reveal. Night capabilities come from the server; daytime, dead, paused, unrevealed and spent states have no selectable targets. First-dark-cycle cards close after that cycle, Assistant automatically analyses dark-cycle attack casualties after revival, without selecting targets, Medic needs a recent corpse, and Void Reaver needs night 2+ with five alive. Once-use availability and passive defence are explicit. Clients cannot bypass these rules by sending commands directly.
+
+Current actions appear before history. Modes distinguish mute from suspend voting. Living/dead target lists and exact target counts come from one authoritative capability function. Hollow special orders must be submitted/skipped before choosing a victim; selecting sends the collective choice immediately, unanimity seals it. Private station on the board is an entry point into My orders, not a second action form. Hollow names remain private; no collective target control exists during day.
+
+Inheritance is announced at night start. Allegiance investigations use registration: Thrall reads Crew; its own check reads true allegiance. Exact-card inspections reveal actual roles. Scans/pair tests/dead records describe pre-attack facts; Proximity describes final dawn neighbours. Reports carry observed cycle and timing. Status instructions and Beacon confirmations are not investigative reports. Signal Saboteur delays only new investigative reports by one dawn; Signal Parasite copies only eligible actual deliveries, including due older records with original timestamps. Source identities and internal event keys are not transmitted.
+
+## Resolution and lifecycle
+
+Night-start snapshot and inheritance → unique Crew-only Jammer block → wards, suppression, stasis/control/delay commitments → pre-attack investigations → deduplicated collective/extra ordinary attacks in one death batch → revival if Medic survives → final-neighbour counts → due/fresh delivery and interception → final victory. No first-night killing. Established effects survive caster death except revival explicitly requires the Medic alive. Dead observers receive no new reports; queued records for a recipient who spent the night dead are discarded even if they revive at dawn. Revival preserves role, old information and spent charges; actions resume next night.
+
+A Warden ward absorbs ordinary attack before Sentinel charge. Wardbreaker suppresses both for its target; the extra attack respects both. Jam suppresses a role's night power, not stored starting knowledge or ordinary voting, and refunds an elective once use. First-night opportunities do not retry. Committed valid once uses otherwise spend even if no useful result or later actor death. Night choices, queues, charges and resolution stamps persist. Duplicate deadline processing cannot repeat effects.
+
+Muted players cannot speak but may nominate and vote. NO VOTE excludes them from the frozen eligible voter list. Threshold is half eligible rounded up, minimum one; no eligible voters means no ballot/execution. Stasis permits execution survival only with five alive immediately before execution and still spends the daily execution. Survival is not death, so no death card reveal or Auditor identity. Restrictions expire at next night start.
+
+## Dealing and balance
+
+Exactly N+K candidates (K=3, 4 or 5); enumerate all possible K-card unused subsets and reject invalid actual factions. All Hollow specialists count as evil everywhere. Specialist uniqueness applies to the candidate pool. Engineers start with two candidates, then increment/decrement one (two removes to zero). Candidate pools require zero or at least two; assignments may contain any legal count. Each night from night one, inspect two other living players and identify all selected Engineer matches at dawn. No automatic partner or absence briefing. Jamming blocks that night; delay/interception and recipient death follow investigative report rules. Void Reaver is permitted at every supported group size. Existing classic pools retain their legal-team behaviour.
+
+Advanced deals require information strength >=.75 and <=.8N, with defence plus recovery <=2 below eight players and <=3 otherwise. Strength units and conditional dependencies are defined in public/setup.js. Weighted random dealing also accounts for evil disruption and bonus lethality; then cards shuffle independently of seats. Every admitted subset has positive probability. This is an initial structural balance model, not an optimized win-rate guarantee. Full playtests must tune it.
+
+Snapshot migration fills new role counts/resources without resetting existing matches. Server mutations are serialized; command and deadline results save before broadcasting, with rollback on failed saves. The supported deployment remains a single authoritative server instance.
+
+Echo and Thrall: both selectable. Echo copies a dead Crew ability/resources once, activates next night, retains Crew/Echo identity and spent resources. Dead targets are never filtered by hidden allegiance; Echo/evil targets spend use with “Nothing happened.” Thrall is evil for victory/quotas but scans Crew, has no network/attack vote, and gets one true-allegiance check. Every dealt game requires an attack-capable Hollow besides any Thrall. Detailed copy timing/privacy: INTERACTION_CONTRACT.md.

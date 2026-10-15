@@ -18,10 +18,14 @@ for (const room of await store.load()) {
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'");
-  if (req.url === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true })); }
-  if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); return res.end(); }
+  if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405, {Allow:'GET, HEAD'}); return res.end(); }
   try {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (pathname === '/health') {
+      let ok=false;try {ok=!shuttingDown&&await store.healthy();}catch {}
+      res.writeHead(ok?200:503, { 'Content-Type':'application/json', 'Cache-Control':'no-store' });
+      return res.end(req.method==='HEAD'?undefined:JSON.stringify({ok}));
+    }
     const path = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
     if (!path.startsWith(root.endsWith(sep) ? root : root + sep)) throw new Error('Invalid path');
     await stat(path); const body = await readFile(path);
@@ -42,7 +46,11 @@ const emit = room => {
     else socket.emit('state', project(room, socket.data.player));
   }
 };
-const persist = async room => { room.updatedAt = Date.now(); await store.save(rooms); };
+const persist = async room => {
+  room.updatedAt=Date.now();
+  try {await store.save(rooms,room.code);}
+  catch(error) {console.error('Snapshot failed:',error.message);throw new Error('The ship could not save this transmission. Try again in a moment.');}
+};
 let stateWork=Promise.resolve();
 const serial=work=>{const next=stateWork.then(work);stateWork=next.catch(()=>{});return next;};
 io.on('connection', socket => {

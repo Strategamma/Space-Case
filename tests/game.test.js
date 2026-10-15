@@ -86,7 +86,7 @@ test('only Captain can configure or advance phases; role dependencies validated'
   const { room, command } = fixture();
   assert.throws(() => command(room.players[1].id,'start'),/Captain/);
   assert.throws(() => command(room.host,'settings',{...room.settings,roles:{...room.settings.roles,engineer:1}}),/at least two/);
-  assert.throws(() => command(room.host,'settings',{...room.settings,roles:{...room.settings.roles,xenobiologist:0,observer:1}}),/need a Xenobiologist/);
+  assert.throws(() => command(room.host,'settings',{...room.settings,roles:{...room.settings.roles,xenobiologist:0,observer:1}}),/possible Xenobiologist/);
 });
 test('every crew member acknowledges orders before first night', () => {
   const { room, command } = fixture(); command(room.host,'start');
@@ -220,4 +220,12 @@ test('Captain can release a lobby berth but cannot remove players during play', 
   f.command(f.room.host,'remove',{id:target.id}); assert.equal(f.room.players.length,6);
   assert.throws(()=>f.command(f.room.host,'remove',{id:f.room.host}),/own berth/);
   f.start(); assert.throws(()=>f.command(f.room.host,'remove',{id:f.room.players[1].id}),/phase/);
+});
+
+test('Captain can save and launch passive Assistant without a Xenobiologist',()=>{
+  const f=fixture(6);const roles=Object.fromEntries(Object.keys(ROLES).map(key=>[key,0]));Object.assign(roles,{assistant:1,hollow:1,cadet:7});
+  f.command(f.room.host,'settings',{...f.room.settings,roles,reveal:false});
+  assert.equal(f.room.settings.roles.xenobiologist,0);assert.equal(f.room.settings.roles.assistant,1);
+  assert.throws(()=>f.command(f.room.host,'settings',{...f.room.settings,reveal:true}),/Research Assistant/);
+  f.start();f.advance(45_000);const assistant=f.room.players.find(p=>p.role==='assistant');assert.match(assistant.reports.at(-1).text,/No casualties to analyse/);
 });
