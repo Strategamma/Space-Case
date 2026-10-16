@@ -3,12 +3,18 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, rmdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { boot, Peer } from './helpers/transport.js';
 
-test('production refuses an ephemeral store without DATABASE_URL',()=>{
-  const result=spawnSync(process.execPath,['server/index.js'],{env:{...process.env,NODE_ENV:'production',DATABASE_URL:''},encoding:'utf8'});
-  assert.notEqual(result.status,0);assert.match(result.stderr,/DATABASE_URL is required in production/);
+test('production starts without a database and restores file-backed rooms when the file survives',async t=>{
+  const file=join(await mkdtemp(join(tmpdir(),'spacecase-production-file-')),'rooms.json');
+  let server=await boot(file,{NODE_ENV:'production',DATABASE_URL:''});const peers=[];
+  t.after(async()=>{peers.forEach(p=>p.close());await server.stop();});
+  const captain=new Peer(server.url);peers.push(captain);const created=await captain.command('create',{name:'File-backed Captain'});assert.equal(created.ok,true);
+  await captain.wait(s=>s.players.length===1);const id=captain.state.me.id;
+  assert.equal((await fetch(server.url+'/health')).status,200);
+  captain.close();await server.stop();server=await boot(file,{NODE_ENV:'production',DATABASE_URL:''});
+  const restored=new Peer(server.url);peers.push(restored);assert.equal((await restored.command('resume',created.session)).ok,true);
+  await restored.wait(s=>s.me.id===id);assert.equal(restored.state.players[0].name,'File-backed Captain');
 });
 test('release serves complete versioned PWA module graph and rejects cross-origin joins',async t=>{
   const server=await boot(join(await mkdtemp(join(tmpdir(),'spacecase-http-')),'rooms.json'));t.after(()=>server.stop());

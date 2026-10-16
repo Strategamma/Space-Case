@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import pg from 'pg';
 
 export async function openStore() {
-  if(process.env.NODE_ENV==='production'&&!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required in production. Configure persistent PostgreSQL before starting.');
+  if(process.env.NODE_ENV==='production'&&!process.env.DATABASE_URL) console.warn('Using local room snapshots. On ephemeral hosts, rooms may be lost on restart or deployment.');
   const pool = process.env.DATABASE_URL ? new pg.Pool({ connectionString: process.env.DATABASE_URL, max:5, connectionTimeoutMillis:5000, query_timeout:5000, ...(process.env.DATABASE_SSL === 'true' ? { ssl: { rejectUnauthorized: true } } : {}) }) : null;
   const file = resolve(process.env.DATA_FILE || '.data/rooms.json');
   if (pool) await pool.query('CREATE TABLE IF NOT EXISTS space_case_rooms (code text PRIMARY KEY, state jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now())');

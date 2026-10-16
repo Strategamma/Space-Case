@@ -36,16 +36,16 @@ Details: `docs/PROJECT.md`, `docs/CARD_RULES.md`, `docs/INTERACTION_CONTRACT.md`
 
 ## Render deployment
 
-Use the repository root containing `package.json` and `render.yaml`. Leave Render’s **Root Directory blank**. The Blueprint defines one Node service and a private PostgreSQL database; review the displayed hosting cost before provisioning.
+Use the repository root containing `package.json` and `render.yaml`. Leave Render’s **Root Directory blank**. The Blueprint defines one Node service, with no database provisioned. Review the displayed hosting cost before provisioning.
 
 - Build: `npm ci --omit=dev`
 - Start: `npm start`
-- Health: `/health` (checks database connectivity)
+- Health: `/health` (also checks PostgreSQL connectivity when configured)
 - Runtime: Node 24; exactly **one** server instance
-- Environment: `NODE_ENV=production`, `DATABASE_URL` from the colocated database; Render supplies `PORT`
+- Environment: `NODE_ENV=production`; Render supplies `PORT`. No `DATABASE_URL` is required.
 - Optional: `DATABASE_SSL=true` only for a database endpoint requiring trusted TLS. Prefer Render’s internal database URL.
 
-Production refuses to start without PostgreSQL. `.data/rooms.json` is a local-development fallback. Secrets and saved rooms must never be committed. Boarding passes are random per-seat credentials; callsigns and `arcadeName` are editable display-name hints, never identity.
+Without `DATABASE_URL`, rooms use `.data/rooms.json` in development and production. On Render’s ephemeral filesystem, active games and session points may be lost during restarts or deployments. This no-database mode is the current user-selected release configuration. PostgreSQL can be added later by setting its internal connection URL as `DATABASE_URL`. Secrets and saved rooms must never be committed. Boarding passes are random per-seat credentials; callsigns and `arcadeName` are editable display-name hints, never identity.
 
 `npm run test:postgres` requires `TEST_DATABASE_URL` pointing to a dedicated database whose name contains `test`. It verifies isolated room saves and production server restart recovery. GitHub Actions provisions an isolated PostgreSQL service for this check.
 
