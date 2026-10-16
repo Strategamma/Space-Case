@@ -17,6 +17,24 @@ const read = key => { try { return JSON.parse(localStorage.getItem(key)); } catc
 const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Private browsing can disable storage. */ } };
 const forget = key => { try { localStorage.removeItem(key); } catch {} };
 let name = read('spacecase.name') || '', session = read('spacecase.session'), state = null, panel = 'crew', targets = [], errorTimer, sound = read('spacecase.sound') || false, offset = 0;
+let installPrompt = null;
+const standaloneMode = matchMedia('(display-mode: standalone)');
+let installed = standaloneMode.matches || navigator.standalone === true;
+function updateInstallButton() {
+  document.querySelectorAll('[data-action="install"]').forEach(el => { el.hidden = installed; });
+}
+window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); installPrompt = event; });
+window.addEventListener('appinstalled', () => { installed = true; installPrompt = null; updateInstallButton(); });
+standaloneMode.addEventListener('change', event => { installed = event.matches || navigator.standalone === true; updateInstallButton(); });
+async function installGame() {
+  if (installed) return;
+  if (installPrompt) {
+    const prompt = installPrompt; installPrompt = null;
+    try { await prompt.prompt(); await prompt.userChoice; return; }
+    catch { /* A dismissed or expired browser prompt can fall back to instructions. */ }
+  }
+  openModal(`<section class="guide"><span class="eyebrow cyan">INSTALL SPACE CASE</span><h2>Your ship. One tap away.</h2><p><strong>iPhone / iPad:</strong> Open this game in Safari, tap Share, then Add to Home Screen.</p><p><strong>Android / desktop:</strong> Open your browser’s menu and look for Install app or Add to Home Screen. If unavailable, try Chrome or Edge.</p><p class="fine-print">Installation depends on your browser. Internet is still required for multiplayer.</p>${button('Got it','close','primary full')}</section>`);
+}
 let reduced = read('spacecase.motion') ?? matchMedia('(prefers-reduced-motion: reduce)').matches;
 document.documentElement.dataset.motion = reduced ? 'reduced' : 'full';
 const hash = new URLSearchParams(location.hash.slice(1));
@@ -25,6 +43,7 @@ if (hash.has('arcadeName')) {
   hash.delete('arcadeName'); history.replaceState(null, '', location.pathname + location.search + (hash.size ? '#' + hash : ''));
 }
 const icons = {
+  install: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',
   orbit: '<circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="11" ry="4" transform="rotate(-35 12 12)"/>',
   arrow: '<path d="M4 12h15m-6-6 6 6-6 6"/>',
   crew: '<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m2-16a3 3 0 0 1 0 6m2 10v-3a6 6 0 0 0-2-4"/>',
@@ -114,7 +133,7 @@ function renderConnection() {
 }
 window.addEventListener('online', renderConnection); window.addEventListener('offline', renderConnection);
 function header() {
-  return `<header class="topbar"><a class="brand" href="/" aria-label="Space Case home"><img class="brand-emblem" src="/assets/space-case-logo.webp" width="64" height="52" alt=""><img class="brand-wordmark" src="/assets/space-case-wordmark.webp" width="120" height="54" alt="Space Case"></a><nav aria-label="Main navigation"><span class="connection" data-connection>ESTABLISHING UPLINK</span>${button(`${icon('star')}<span>Cards</span>`, 'library', 'quiet', 'aria-label="Card library"')}${button(`${icon('log')}<span>Field guide</span>`, 'guide', 'quiet', 'aria-label="Field guide"')}${button(icon('gear'), 'preferences', 'icon-button quiet', 'aria-label="Preferences"')}</nav></header>`;
+  return `<header class="topbar"><a class="brand" href="/" aria-label="Space Case home"><img class="brand-emblem" src="/assets/space-case-logo.webp" width="64" height="52" alt=""><img class="brand-wordmark" src="/assets/space-case-wordmark.webp" width="120" height="54" alt="Space Case"></a><nav aria-label="Main navigation"><span class="connection" data-connection>ESTABLISHING UPLINK</span>${installed ? '' : button(`${icon('install')}<span>Install</span>`, 'install', 'quiet install-button', 'aria-label="Install Space Case" title="Install Space Case"')}${button(`${icon('star')}<span>Cards</span>`, 'library', 'quiet', 'aria-label="Card library"')}${button(`${icon('log')}<span>Field guide</span>`, 'guide', 'quiet', 'aria-label="Field guide"')}${button(icon('gear'), 'preferences', 'icon-button quiet', 'aria-label="Preferences"')}</nav></header>`;
 }
 function landing() {
   return `${header()}<main class="landing"><section class="hero"><div class="hero-art" aria-hidden="true"></div><img class="hero-emblem" src="/assets/space-case-logo.webp" alt="A Hollow stowaway clings to a ship escaping a crimson cosmic vortex" width="1254" height="1254" fetchpriority="high"><div class="hero-grain" aria-hidden="true"></div><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> A SOCIAL DEDUCTION TRANSMISSION</div><h1 class="hero-wordmark"><img src="/assets/space-case-wordmark.webp" alt="Space Case" width="1774" height="887" fetchpriority="high"></h1><p class="tagline">Trust is a limited resource.</p><p class="hero-description">Something came aboard.<br>It looks like one of you.</p><a class="hero-board-link text-link" href="#boarding-form">Board the ship ${icon('arrow')}</a><div class="hero-stats"><span>${icon('crew')} 6–15 crew</span><span>${icon('orbit')} Play in person</span><span>${icon('signal')} Internet required</span></div></div><div class="coordinates" aria-hidden="true">SECTOR 07.26 <span>◈</span> ANOMALY DETECTED</div></section><section class="boarding-wrap"><div class="boarding-intro"><span class="eyebrow cyan">YOUR NEXT GAME DARK CYCLE, IN ORBIT</span><h2>All hands.<br>Eyes open.</h2><p>Your friends. One ship. A few very convincing impostors. Keep your orders close and your suspicions closer.</p><a class="text-link" href="#briefing">How the voyage works ${icon('arrow')}</a></div><div class="boarding panel"><div class="panel-eyebrow"><span>01 / BOARDING TERMINAL</span>${icon('ship')}</div><h2>Welcome aboard, cadet.</h2><p>First, tell the crew what to call you.</p><form id="boarding-form"><label for="callsign">YOUR CALLSIGN</label><div class="input-wrap">${icon('crew')}<input id="callsign" name="name" placeholder="e.g. Cosmic Casey" maxlength="32" autocomplete="nickname" value="${esc(name)}" required><span class="input-indicator"></span></div><button class="button primary full" name="intent" value="create" type="submit">${icon('ship')} Take command ${icon('arrow')}</button><div class="button-caption">HOST A NEW VOYAGE</div><div class="join-row"><input id="boarding-code" name="code" placeholder="6-CHAR CODE" maxlength="6" aria-label="Boarding code" autocomplete="off" autocapitalize="characters"><button class="button secondary" name="intent" value="join" type="submit">Join a crew ${icon('arrow')}</button></div><div class="button-caption">HAVE A BOARDING CODE? YOUR BERTH IS WAITING.</div></form><div class="terminal-foot"><span class="live-dot"></span> No accounts. Just a callsign and a little trust.</div></div></section><section id="briefing" class="briefing"><div class="section-title"><span class="eyebrow">THE MISSION BRIEF</span><h2>Same friends. New suspicions.</h2><p>The Captain has assembled a crew to carry the ship through Hollow space. But the enemy is already aboard, hidden behind familiar faces. The Captain cannot tell which trusted crewmate will strike when the lights go out. Work your station in the dark, compare stories in the light, and uncover the Hollow before they take command.</p></div><div class="briefing-grid"><article><span class="step-number">01</span>${icon('lock')}<h3>Open your orders.</h3><p>Everyone gets a secret character. Most serve the ship. The Hollow serve something else.</p></article><article><span class="step-number">02</span>${icon('scan')}<h3>Work the dark cycle.</h3><p>Attend to your private station. Gather clues. The Hollow secretly agree on their next victim.</p></article><article><span class="step-number">03</span>${icon('axe')}<h3>Trust. Accuse. Survive.</h3><p>Talk face to face, nominate suspects, and vote in secret. Find every Hollow before they take command.</p></article></div></section></main><footer><span>SPACE CASE <span class="muted">/ A DECADENCE ARCADE ORIGINAL</span></span><span>KEEP YOUR FRIENDS CLOSE. YOUR ORDERS CLOSER.</span></footer>`;
@@ -472,6 +491,7 @@ async function onAction(event) {
   if(action==='watch-tap') {watchCount++;modal.querySelector('[data-watch-count]').textContent=String(watchCount).padStart(2,'0');return;}
   if (action === 'fill-cadets') { const form = activePoolForm(), draft = poolFields(form); form.elements.cadet.value = Math.max(0, draft.playerCount + draft.spareCards - (poolSize(draft.roles) - draft.roles.cadet)); refreshPoolBudget(); return; }
   if (action === 'captain-handbook') return captainHandbook();
+  if (action === 'install') return installGame();
   if (action === 'guide') return guide();
   if (action === 'preferences') return preferences();
   if (action.startsWith('tab-')) { panel = action.slice(4); render(); return; }

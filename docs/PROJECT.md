@@ -14,6 +14,6 @@ Crew win at zero evil; evil win at living parity. Winning teammates score one, d
 
 Script editor: isolated drafts, legal random pools; Apply then Save. Dirty briefings block launch. Hollow selection server-only. Timing: script.js; rules: wiki.js; legacy: cycles.js. Private terminals close at expiry/dawn/consensus. Moderator: BOT_GOD.md.
 
-Onboarding: private next steps and mission/power/limits; pinned ballots; automatic final totals, threshold/tie/block results. Victory reveals characters/allegiances/survival and public-event recap; private reports stay private. Mission opens in lobby/handbook; collapses during play. Captain’s Handbook in setup/command. Previews removed.
+Header install icon: native prompt/Home Screen help; hidden in standalone mode. Onboarding: private next steps and mission/power/limits; pinned ballots; automatic final totals, threshold/tie/block results. Victory reveals characters/allegiances/survival and public-event recap; private reports stay private. Mission opens in lobby/handbook; collapses during play. Captain’s Handbook in setup/command. Previews removed.
 
 Release/QA: RELEASE.md, QA.md. Device/balance unverified. Expansion: docs/characters; main list only. Catalogue gate runs in check/CI; shared scenarios and lifecycle tests cover all roles.
