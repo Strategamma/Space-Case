@@ -1,6 +1,6 @@
 # Space Case
 
-Internet PWA; 6–15 in-person players. DOM/CSS + Node/Socket.IO; Node 24. npm start/test/run check. Repo Strategamma/Space-Case; checkout game/Space Case. Render https://space-case-ygl3.onrender.com serves previous build. d98331b failed startup; 1.0.1 makes DATABASE_URL optional. User chose file storage: Render restarts/deploys may lose rooms/points. One instance; optional PostgreSQL. Boarding passes authorize; names never authorize.
+Internet PWA; 6–15 in-person players. DOM/CSS + Node/Socket.IO; Node 24. npm start/test/run check. Repo Strategamma/Space-Case; checkout game/Space Case. Render: https://space-case-ygl3.onrender.com; verify deployed commit separately. DATABASE_URL optional. User chose file storage: Render restarts/deploys may lose rooms/points. One instance; optional PostgreSQL. Boarding passes authorize; names never authorize.
 
 30 cards: public/roles.js holds identities/metadata. isHollow is true evil allegiance (parity/scoring); scansAsHollow excludes Thrall; canHunt excludes Thrall from network/consensus. Exact inspections reveal actual cards. Hostile non-network target lists include Thrall to avoid identity leaks. Each deal needs an attack-capable Hollow. setup.js validates N+K candidates (K=3/4/5 backup cadets), 1..floor(N/3) evil, minimum two-thirds Crew and strength budgets. Engineer toggles add two candidates or clear the group; compact counters add extras. Actual deals may include one. Engineers inspect two/cycle. Assistant passively reports whether any dark-cycle casualty registered Hollow; executions excluded, no casualties explicit. Xenobiologist-independent.
 
@@ -12,6 +12,8 @@ Cycles: private dark cycles, public light cycles. Network specialists submit/ski
 
 Crew win at zero evil; evil win at living parity. Winning teammates score one, dead included. One execution/day; self-nomination; frozen secret ballots threshold ceil(eligible/2), minimum one; tied highest clears block. Dead cannot participate. Restrictions public at dawn, source hidden. Auditor/Assistant require death reveals off. Captain locks clockwise seating at launch. Disconnect pauses and consensual succession persist state. Server saves before broadcast and rolls back failed saves.
 
-Script editor: isolated drafts, capped card toggles/counters, clear/fill and legal random pools. Apply then Save; dirty briefings cannot launch. Crew-only/secret Hollow mode remains proposed. Public Script shows candidates and cycle order. Timing: script.js; rules: wiki.js; legacy text: cycles.js. Ship Intelligence labels; inline Hollow choices; private terminals auto-close at expiry/dawn/consensus. Moderator contract: BOT_GOD.md.
+Script editor: isolated drafts, legal random pools; Apply then Save. Dirty briefings block launch. Secret Hollow mode deferred. Timing: script.js; rules: wiki.js; legacy: cycles.js. Private terminals close at expiry/dawn/consensus. Moderator: BOT_GOD.md.
 
-Release/QA: RELEASE.md, QA.md. Navy/cyan/crimson arcade; reduced motion, opt-in audio. Physical PWA and group balance unverified.
+Onboarding: private next steps and mission/power/limits; ballot threshold/tie/execution explanations. Victory reveals characters/allegiances/survival and public-event recap; private reports stay private. Opening story in mission brief. Interactive previews removed.
+
+Release/QA: RELEASE.md, QA.md. Navy/cyan/crimson; reduced motion, opt-in audio. Physical PWA and group balance unverified.
