@@ -83,3 +83,8 @@ body[data-phase=lobby] .crew-seat{animation:seat-arrive .5s ease-out both}
 .reveal-hollow { border-color:#b44655; }
 .voyage-recap { text-align:left; margin:20px 0; }
 .voyage-recap article { border-top:1px solid #29404d; padding:10px 0; }
+
+.mission-brief { margin-bottom:20px; padding:18px 20px; }
+.mission-brief summary { cursor:pointer; color:var(--cyan); font-size:18px; }
+.mission-brief p { font-size:14px; line-height:1.6; margin:12px 0 0; }
+.captain-handbook .mission-brief { margin-top:20px; }

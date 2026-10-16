@@ -2,7 +2,7 @@
 
 Internet PWA; 6–15 in-person players. DOM/CSS + Node/Socket.IO; Node 24. npm start/test/run check. Repo Strategamma/Space-Case; checkout game/Space Case. Render: https://space-case-ygl3.onrender.com; verify deployed commit separately. DATABASE_URL optional. User chose file storage: Render restarts/deploys may lose rooms/points. One instance; optional PostgreSQL. Boarding passes authorize; names never authorize.
 
-30 cards: public/roles.js holds identities/metadata. isHollow is true evil allegiance (parity/scoring); scansAsHollow excludes Thrall; canHunt excludes Thrall from network/consensus. Exact inspections reveal actual cards. Hostile non-network target lists include Thrall to avoid identity leaks. Each deal needs an attack-capable Hollow. setup.js validates N+K candidates (K=3/4/5 backup cadets), 1..floor(N/3) evil, minimum two-thirds Crew and strength budgets. Engineer toggles add two candidates or clear the group; compact counters add extras. Actual deals may include one. Engineers inspect two/cycle. Assistant passively reports whether any dark-cycle casualty registered Hollow; executions excluded, no casualties explicit. Xenobiologist-independent.
+30 cards: public/roles.js holds identities/metadata. isHollow is true evil allegiance (parity/scoring); scansAsHollow excludes Thrall; canHunt excludes Thrall from network/consensus. Exact inspections reveal actual cards. Hostile non-network target lists include Thrall to avoid identity leaks. Each deal needs an attack-capable Hollow. setup.js validates N+K candidates (K=3/4/5 backup cadets), 1..floor(N/3) evil, minimum two-thirds Crew and strength budgets. Engineer toggles add two candidates or clear the group; Engineers inspect two/cycle. Assistant passively reports whether any dark-cycle casualty registered Hollow; executions excluded, no casualties explicit. Xenobiologist-independent.
 
 Echo remains Crew/Echo. Once/game choose any dead seat; invalid Echo/evil targets spend use and report “Nothing happened.” Valid Crew power/resource snapshots activate next dark cycle via powerRole(player). Spent charges and fixed Warden links persist; expired starting/first-dark-cycle opportunities do not restart. Copied Wardens/Medics resolve. Dead Echo’s pending identity stays hidden. Thrall has one true-evil check, scans as Crew elsewhere, no network/attack vote, counts evil for victory. Copy state persists; rematch resets.
 
@@ -14,6 +14,6 @@ Crew win at zero evil; evil win at living parity. Winning teammates score one, d
 
 Script editor: isolated drafts, legal random pools; Apply then Save. Dirty briefings block launch. Secret Hollow mode deferred. Timing: script.js; rules: wiki.js; legacy: cycles.js. Private terminals close at expiry/dawn/consensus. Moderator: BOT_GOD.md.
 
-Onboarding: private next steps and mission/power/limits; ballot threshold/tie/execution explanations. Victory reveals characters/allegiances/survival and public-event recap; private reports stay private. Opening story in mission brief. Interactive previews removed.
+Onboarding: private next steps and mission/power/limits; ballot threshold/tie/execution explanations. Victory reveals characters/allegiances/survival and public-event recap; private reports stay private. Mission opens in lobby/handbook; collapses during play. Captain’s Handbook in setup/command. Previews removed.
 
-Release/QA: RELEASE.md, QA.md. Navy/cyan/crimson; reduced motion, opt-in audio. Physical PWA and group balance unverified.
+Release/QA: RELEASE.md, QA.md. Physical PWA and group balance unverified.
