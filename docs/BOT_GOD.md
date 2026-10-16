@@ -7,8 +7,8 @@ Bot God is the authoritative server rule engine. It does not need a language mod
 | Input | When | Validation / effect |
 |---|---|---|
 | Playing crew count | Lobby | 6–15; includes a playing Captain, excludes an overseeing Captain. Launch requires exactly that many connected players. |
-| Spare cards | Lobby | 3, 4 or 5. Host selects exactly N + spare cards; N are secretly dealt. |
-| Candidate card multiset | Lobby | Library cards and copy limits; team minima, at least one attack-capable Hollow in every actual deal, role dependencies and compatibility. Engineer candidates zero or 2+. |
+| Extra candidates | Lobby | 3, 4 or 5. Captain selects N+K Crew/special candidates. Engine deals N-H candidates and H secret Hollow; K+H candidates stay unused. |
+| Candidate card multiset | Lobby | Crew/special cards only, copy limits, role dependencies and reveal compatibility. Hollow selection belongs to Ship Intelligence and cannot be supplied through settings. Engineer candidates zero or 2+. |
 | Randomize script request | Lobby Script editor | Prefills a varied compatible pool sized to N+spares; never assigns players. Isolated draft supports add/remove/clear/fill. Apply then save briefing. |
 | Captain playing / overseeing | Lobby | Playing Captain sees only own secrets; overseer has no role, vote or score. |
 | Public character reveals | Lobby | If enabled, exact death cards become public. Auditor cannot be selected. |
@@ -26,7 +26,7 @@ Captain cannot choose actual assignments, inspect a playing opponent's secrets, 
 
 1. Authenticate boarding passes, reserve exclusive cosmetic avatars, preserve seats and reconnect state.
 2. Validate configuration and suggest a usable public pool. Reject an impossible setup with a clear public explanation.
-3. Enumerate legal N-card deals from N+3/4/5 candidates; enforce true-allegiance quotas, an actual attacker, information/protection/recovery budgets and dependencies. Weight legal deals by relative strengths, then cryptographically shuffle seats. No post-deal secret team changes or mid-match balancing.
+3. Secretly draw H Hollow and N-H cards from the authored N+K Crew/special candidates. Enforce 1..floor(N/3) Hollow, an attacker, copy limits and existing strength budgets. Use bounded weighted rejection sampling with a validated all-basic-Hollow witness fallback, then cryptographically shuffle assignments. No post-deal team changes or mid-match balancing.
 4. Store the deal before showing anything. Each player explicitly reveals and acknowledges their own card/starting information. Once all playing seats are ready and connected, start night one automatically; no first-night kills.
 5. Offer only legal private actions for the player's state, phase, life, resources and role. Accept explicit passes; missing night choices become no action at the shared deadline. Invalid commands do not consume uses.
 6. Freeze input at the deadline and resolve in the order below. Silent jam never fabricates false results. Echo identity, copied powers, Thrall registration and actual allegiance remain distinct.
@@ -111,5 +111,6 @@ Official references: [Script Tool](https://wiki.bloodontheclocktower.com/Script_
 
 The useful principles are script-specific night sheets, disruption before dependent powers, protection before kills, and death-aware neighbour information. We retain Space Case's approved differences: silent suppression with no fabricated scan result, refunded jammed one-use powers, simultaneous private input, ordinary protected extra attack, and no private information for dead players. Do not import Clocktower's arbitrary misinformation, death-triggered exceptions or character-reset rules into this engine.
 
-### Proposed secret Hollow mode (not implemented)
-Captain selects N+K Crew candidates; bot deals N-H Crew plus H secret evil cards. Character sheet would show Crew candidates only; Night order would show selected Crew and every Hollow possibility. For 8 players, 11 Crew candidates and 2 evil means 5 unused Crew. Extra evil must use bounded, tested strength rules, never change after dealing. Backup count meaning and Oracle information require agreement before implementation.
+### Automatic Hollow selection (implemented)
+
+The Captain authors N+K Crew/special candidates only. Ship Intelligence secretly chooses H Hollow and deals N-H candidates. All Hollow possibilities remain visible in the library/public Script reference, never the actual hidden roster. For 8 players, 11 candidates and 2 Hollow, 6 candidates are dealt and 5 remain unused. Oracle learns the exact unused Crew/special candidates (K+H); other ordinary players do not. Existing in-progress legacy games retain their original deals; new/edited/restored lobbies and rematches use automatic selection. See AUTOMATIC_HOLLOW.md.

@@ -4,7 +4,7 @@ import {ROLES,isHollow,canHunt,DEFAULT_SETTINGS} from '../public/roles.js';
 import {createRoom,addPlayer,act,tick,project,connection,ensureAvatars} from '../server/game.js';
 import {resolveAbilities,abilityView,huntView} from '../server/abilities.js';
 import {startingReports,deliverReports,dealPool} from '../server/moderator.js';
-import {poolError} from '../public/setup.js';
+import {poolError,crewPoolError} from '../public/setup.js';
 
 import {scenario} from './helpers/character-scenario.js';
 
@@ -313,8 +313,8 @@ test('Captain manages clockwise seats only before launch; observer berth exclude
 });
 test('Auditor is incompatible with public reveals in settings and legacy launch',()=>{
   const room=createRoom('Captain');for(let i=1;i<6;i++)addPlayer(room,'Crew '+i);
-  const roles={...room.settings.roles,cadet:4,auditor:1};
-  assert.match(poolError(6,roles,true),/reveals/);assert.equal(poolError(6,roles,false),null);
+  const roles={...room.settings.roles,cadet:6,auditor:1};
+  assert.match(crewPoolError(6,roles,true),/reveals/);assert.equal(crewPoolError(6,roles,false),null);
   assert.throws(()=>act(room,room.host,'settings',{...room.settings,roles}),/reveals/);
   act(room,room.host,'settings',{...room.settings,roles,reveal:false});
   room.settings.reveal=true;assert.throws(()=>act(room,room.host,'start'),/reveals/);

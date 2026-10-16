@@ -7,12 +7,13 @@ import { ROLES } from '../public/roles.js';
 function fixture(count = 6, hollow = 1) {
   const room = createRoom('Captain');
   for (let i = 1; i < count; i++) addPlayer(room, `Cadet ${i}`);
-  room.settings.roles.hollow = hollow;
+  // Legacy fixed-deal fixture for established ability rules, not a host settings path.
   room.settings.playerCount = count;
   room.settings.roles.cadet = count + 3 - Object.entries(room.settings.roles).filter(([key])=>key!=='cadet').reduce((a,[,n])=>a+n,0);
   let now = 1_000_000;
   const command = (id, action, data = {}) => {
     if (action === 'start') {
+      room.settings.automaticHollow=false;room.settings.roles.hollow=hollow;
       const seats = room.players.filter(p=>p.playing);
       room.settings.playerCount = seats.length;
       room.settings.roles.cadet = seats.length + 3 - Object.entries(room.settings.roles).filter(([key])=>key!=='cadet').reduce((a,[,n])=>a+n,0);
@@ -223,7 +224,7 @@ test('Captain can release a lobby berth but cannot remove players during play', 
 });
 
 test('Captain can save and launch passive Assistant without a Xenobiologist',()=>{
-  const f=fixture(6);const roles=Object.fromEntries(Object.keys(ROLES).map(key=>[key,0]));Object.assign(roles,{assistant:1,hollow:1,cadet:7});
+  const f=fixture(6);const roles=Object.fromEntries(Object.keys(ROLES).map(key=>[key,0]));Object.assign(roles,{assistant:1,cadet:8});
   f.command(f.room.host,'settings',{...f.room.settings,roles,reveal:false});
   assert.equal(f.room.settings.roles.xenobiologist,0);assert.equal(f.room.settings.roles.assistant,1);
   assert.throws(()=>f.command(f.room.host,'settings',{...f.room.settings,reveal:true}),/Research Assistant/);

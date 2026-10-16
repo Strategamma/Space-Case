@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { ROLES, DEFAULT_SETTINGS, isHollow, canHunt, powerRole } from '../public/roles.js';
-import { CARD_LIMITS, poolError, factionLimits } from '../public/setup.js';
-import { dealPool, startingReports, deliverReports } from './moderator.js';
+import { CARD_LIMITS, poolError, crewPoolError, suggestCrewPool, factionLimits } from '../public/setup.js';
+import { dealPool, dealAutomaticHollow, startingReports, deliverReports } from './moderator.js';
 import { initAbilities, openNight, resolveAbilities, abilityView, huntView, submitAbility, submitHunt } from './abilities.js';
 import { AVATARS } from '../public/avatars.js';
 
@@ -13,9 +13,17 @@ const log = (room, text) => room.log.push({ id: randomUUID(), text, day: room.da
 const requirePhase = (room, ...phases) => { if (!phases.includes(room.phase)) fail('That action is not available in this phase.'); };
 const requireCaptain = (room, id) => { if (room.host !== id) fail('Only the Captain can do that.'); };
 const requireLiving = (room, id) => { const p = player(room, id); if (!p.playing || !p.alive) fail('Only living crew may do that.'); return p; };
+function automaticSetup(room) {
+  const count=room.settings.playerCount||6, spare=room.settings.spareCards??3;
+  const roles={...Object.fromEntries(Object.keys(ROLES).map(key=>[key,0])),...room.settings.roles};
+  for(const key of Object.keys(roles))if(isHollow(key))roles[key]=0;
+  roles.cadet+=Math.max(0,count+spare-Object.values(roles).reduce((a,b)=>a+b,0));
+  room.settings={...room.settings,automaticHollow:true,roles:crewPoolError(count,roles,room.settings.reveal,spare)?suggestCrewPool(count,spare):roles};
+}
 export function ensureAvatars(room) {
   room.settings.roles = {...Object.fromEntries(Object.keys(ROLES).map(key=>[key,0])),...room.settings.roles};
   initAbilities(room);
+  if(room.phase==='lobby'&&!room.settings.automaticHollow)automaticSetup(room);
   room.settings.spareCards ??= 3;
   room.settings.playerCount ??= Math.max(6, crew(room).length);
   room.settings.roles.cadet ??= Math.max(0, room.settings.playerCount + room.settings.spareCards - Object.values(room.settings.roles).reduce((a,b) => a+b, 0));
@@ -54,8 +62,8 @@ function validateSettings(room, next) {
   if (roles.observer && !roles.xenobiologist) fail('The Observatory Officer needs a possible Xenobiologist.');
   const count = crew(room).length + (next.playing ? 1 : 0) - (player(room, room.host).playing ? 1 : 0);
   if (count > 15) fail('All fifteen berths are occupied.');
-  const error = poolError(next.playerCount, roles, next.reveal, next.spareCards??3); if (error) fail(error);
-  return { playerCount: next.playerCount, spareCards:next.spareCards??3, playing: next.playing, reveal: next.reveal, discussion: next.discussion, night: next.night, roles };
+  const error = crewPoolError(next.playerCount, roles, next.reveal, next.spareCards??3); if (error) fail(error);
+  return { automaticHollow:true, playerCount: next.playerCount, spareCards:next.spareCards??3, playing: next.playing, reveal: next.reveal, discussion: next.discussion, night: next.night, roles };
 }
 function tallyBallot(room) {
   if(room.nomination?.result) return;
@@ -145,8 +153,8 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       if (seats.length < 6 || seats.length > 15) fail('You need 6–15 crew members to launch.');
       if (seats.length !== room.settings.playerCount) fail(`The briefing expects ${room.settings.playerCount} players. Update the player count or wait for the crew.`);
       if (seats.some(p => !p.online)) fail('Wait for all crew members to reconnect.');
-      const error=poolError(seats.length,room.settings.roles,room.settings.reveal,room.settings.spareCards??3); if(error) fail(error);
-      const deal = dealPool(seats.length, room.settings.roles,undefined,room.settings.spareCards??3);
+      const error=(room.settings.automaticHollow?crewPoolError:poolError)(seats.length,room.settings.roles,room.settings.reveal,room.settings.spareCards??3); if(error) fail(error);
+      const deal = (room.settings.automaticHollow?dealAutomaticHollow:dealPool)(seats.length, room.settings.roles,undefined,room.settings.spareCards??3);
       room.unused = deal.unused; room.matchId=randomUUID(); room.resolvedCycle=0; room.deferredReports=[]; room.specialChoices={}; room.executionRecord=null;
       seats.forEach((p, i) => { p.role = deal.assigned[i]; p.alive = true; p.revealed = false; p.acknowledged = false; p.reports = []; p.inherited = false; delete p.echoRole; delete p.echoPending; p.echoSpent=false; p.delayTargets=[]; p.usedOnce=false; p.sentinelUsed=false; p.status={}; p.reportKeys=[]; delete p.boundId; delete p.lastDread; delete p.diedDay; delete p.deathPhase; });
       deliverReports(room, startingReports(room));
@@ -216,7 +224,7 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       requireCaptain(room, id); requirePhase(room, 'victory');
       room.unused = []; room.phase = 'lobby'; room.deadline = null; room.day = 0; room.log = []; room.winner = null; room.winnerId = null; room.block = null; room.lastDeaths = [];
       for (const p of room.players) { p.role = null; p.alive = true; p.reports = []; p.revealed = false; p.acknowledged = false; p.inherited = false; delete p.echoRole; delete p.echoPending; p.echoSpent=false; p.delayTargets=[]; p.usedOnce=false; p.sentinelUsed=false; p.status={}; p.reportKeys=[]; delete p.boundId; delete p.lastDread; delete p.diedDay; delete p.deathPhase; }
-      room.deferredReports=[]; room.specialChoices={}; room.resolvedCycle=0; room.executionRecord=null; break;
+      room.deferredReports=[]; room.specialChoices={}; room.resolvedCycle=0; room.executionRecord=null; automaticSetup(room); break;
     }
     case 'consent': {
       if (!room.pause || room.pause.reason !== 'captain') fail('Captain succession is not available.');

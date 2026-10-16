@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ROLES,canHunt,isHollow} from '../public/roles.js';
 import {NIGHT_ORDER,NIGHT_STAGES,scriptOrder,resolutionRank} from '../public/script.js';
-import {poolError,suggestPool,poolSize,allowedDeal} from '../public/setup.js';
+import {poolError,suggestPool,suggestCrewPool,poolSize,allowedDeal} from '../public/setup.js';
 import {dealPool,startingReports,deliverReports} from '../server/moderator.js';
 import {createRoom,addPlayer,act,connection,project,ensureAvatars} from '../server/game.js';
 
@@ -44,8 +44,8 @@ test('suggestions and secret 3/4/5-card deals remain valid across all supported 
 test('spare-card configuration is validated and retained across settings, deal and restoration',()=>{
   const room=createRoom('Captain');for(let i=1;i<6;i++)addPlayer(room,'Crew '+i);
   assert.throws(()=>act(room,room.host,'settings',{...room.settings,spareCards:2}),/3, 4 or 5/);
-  const roles=suggestPool(6,5);act(room,room.host,'settings',{...room.settings,roles,spareCards:5});
-  act(room,room.host,'start');assert.equal(room.unused.length,5);
+  const roles=suggestCrewPool(6,5);act(room,room.host,'settings',{...room.settings,roles,spareCards:5});
+  act(room,room.host,'start');assert.equal(room.unused.length,5+room.players.filter(p=>isHollow(p.role)).length);
   assert.equal(project(room,room.host).unused,undefined);
   assert.equal(project(room,room.host).settings.spareCards,5);
   const restored=JSON.parse(JSON.stringify(room));ensureAvatars(restored);assert.equal(restored.settings.spareCards,5);
@@ -63,15 +63,16 @@ test('last private acknowledgement starts night one exactly once; disconnected s
 
 test('Oracle receives configured unused-card count privately and first night auto-starts for an overseeing Captain',()=>{
   const room=createRoom('Captain');for(let i=1;i<7;i++)addPlayer(room,'Crew '+i);
-  const roles=suggestPool(6,4);roles.cadet--;roles.oracle=1;
+  const roles=suggestCrewPool(6,4);
   act(room,room.host,'settings',{...room.settings,playing:false,spareCards:4,roles});act(room,room.host,'start');
+  const dealtHollow=room.players.filter(p=>p.playing&&isHollow(p.role)).length;
   const owner=room.players.find(p=>p.playing);owner.role='oracle';
   // A deliberate reveal gates the private report even when the card was forced in this scenario.
   owner.reports=[];owner.reportKeys=[];deliverReports(room,startingReports(room));
   assert.deepEqual(project(room,owner.id).me.reports,[]);
   for(const p of room.players.filter(p=>p.playing)){act(room,p.id,'reveal');act(room,p.id,'acknowledge');}
-  assert.equal(room.phase,'night');assert.equal(room.day,1);assert.equal(room.unused.length,4);
-  assert.equal(project(room,owner.id).me.reports.find(r=>r.kind==='unused').text.split(', ').length,4);
+  assert.equal(room.phase,'night');assert.equal(room.day,1);assert.equal(room.unused.length,4+dealtHollow);
+  assert.equal(project(room,owner.id).me.reports.find(r=>r.kind==='unused').text.split(', ').length,room.unused.length);
 });
 
 test('cycle reference retains shared steps and unscheduled candidates without leaking assignments',()=>{

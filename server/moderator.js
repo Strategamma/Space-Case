@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from 'node:crypto';
-import { poolError, candidateDeals, dealStrength } from '../public/setup.js';
+import { poolError, candidateDeals, dealStrength, crewPoolError, findCrewDeal, CARD_LIMITS, allowedDeal } from '../public/setup.js';
 import { ROLES, isHollow, canHunt, scansAsHollow } from '../public/roles.js';
 
 const playing = room => room.players.filter(p => p.playing);
@@ -25,6 +25,27 @@ export function dealPool(count, roles, choose = randomInt, spareCards=3) {
   for (const candidate of validUnused) { ticket -= candidate.weight; if (ticket < 0) { selected = candidate; break; } }
   const unused = new Set(selected.indices);
   return { assigned: shuffle(cards.filter((_, i) => !unused.has(i)), choose), unused: cards.filter((_, i) => unused.has(i)) };
+}
+export function dealAutomaticHollow(count, roles, choose=randomInt, spareCards=3) {
+  const error=crewPoolError(count,roles,false,spareCards);if(error)throw new Error(error);
+  const cards=Object.entries(roles).flatMap(([key,n])=>Array(n).fill(key));
+  const enemies=Object.keys(ROLES).filter(isHollow), max=Math.floor(count/3);
+  const complete=(crew,hollow)=>{
+    const unused=[...cards];for(const key of crew)unused.splice(unused.indexOf(key),1);
+    return {assigned:shuffle([...crew,...hollow],choose),unused};
+  };
+  for(let attempt=0;attempt<128;attempt++) {
+    const h=1+choose(max), crew=shuffle([...cards],choose).slice(0,count-h), hollow=[];
+    for(let i=0;i<h;i++) {
+      const options=enemies.filter(key=>hollow.filter(k=>k===key).length<CARD_LIMITS[key]);
+      hollow.push(options[choose(options.length)]);
+    }
+    const assigned=[...crew,...hollow];
+    if(allowedDeal(assigned)&&choose(100)<dealWeight(assigned))return complete(crew,hollow);
+  }
+  // A validated witness guarantees termination even with adversarial/random-test selectors.
+  const fallback=findCrewDeal(count,roles,spareCards);
+  return complete(fallback.crew,Array(fallback.hollowCount).fill('hollow'));
 }
 export const report = (sender, recipient, day, kind, text, investigative=false, timing=day===0?'character reveal':'before attack') => ({ id:randomUUID(), key:`${day}:${kind}:${sender.id}:${recipient.id}`, day, kind, text, recipient:recipient.id, investigative, timing });
 export function startingReports(room) {

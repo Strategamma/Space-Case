@@ -1,10 +1,10 @@
 # Adding characters safely
 
-New characters belong in the **main character list**. No experimental section or opt-in switch. The release gate is metadata validation, automated regression checks and playtesting. No new character is included in this scaffolding change.
+New characters belong in the **main character list**. No experimental section or opt-in switch. The release gate is metadata validation, automated regression checks and playtesting. The Martyr is the first expansion.
 
 1. Copy `TEMPLATE.md` to `<stable_id>.md`. Decide interactions before implementing. A new power must not silently change existing rules.
 2. Add a unique stable ID to `public/roles.js`. Define team, symbol, description, timing and action metadata. Set copy limits in `public/setup.js` when different from the normal one-copy rule. Existing catalogue-based lists/defaults include new IDs automatically.
-3. Register `CHARACTER_BALANCE` in `public/setup.js`, even if the reviewed contribution is `{}`. Weights are provisional strength estimates, not win-rate guarantees. Preserve existing weights; changes to old characters need their own justification. Candidate deals/random selection continue to use the main catalogue.
+3. Register `CHARACTER_BALANCE` in `public/setup.js`, even if the reviewed contribution is `{}`. Weights are provisional strength estimates, not win-rate guarantees. Preserve existing weights; changes to old characters need their own justification. The Captain selects only non-Hollow candidates; new Hollow characters are automatically eligible for server selection. Keep `crewPoolError`/`dealAutomaticHollow` and the automatic-deal matrix covered.
 4. Add explicit first/later-cycle entries in `public/script.js` and interaction paragraphs in `public/wiki.js`. Update the moderator contract/master schedule if rules or stages change.
 5. Implement server validation and resolution in `server/abilities.js`, starting information in `server/moderator.js`, and any phase/victory rules in `server/game.js`. Reuse recipient-filtered `project()` and report delivery. Never trust a client to enforce legality or hide a secret.
 6. Copy `character.test.js.example` to `tests/characters/<stable_id>.test.js`. Replace the placeholders and add the contract's applicable interaction assertions. The shared scenario helper drives actual `act()`/`tick()` calls. Root tests cover existing cards; `tests/characters/*.test.js` is automatically included in CI. Generic gates do not prove a new power works: character-specific assertions and review are mandatory.

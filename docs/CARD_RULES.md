@@ -1,6 +1,6 @@
 # Runtime character rules
 
-All 28 identities in public/roles.js are implemented. Original roster descriptions are in EXPANDED_ROSTER.md; complete target/timing/collision intent is in INTERACTION_CONTRACT.md. The implementation is server/abilities.js, with tests/abilities.test.js and the existing game/moderator/transport suites.
+All 31 identities in public/roles.js are implemented. Original roster descriptions are in EXPANDED_ROSTER.md; complete target/timing/collision intent is in INTERACTION_CONTRACT.md. The implementation is server/abilities.js, with tests/abilities.test.js and the existing game/moderator/transport suites.
 
 ## Information and controls
 
@@ -20,13 +20,9 @@ Muted players cannot speak but may nominate and vote. NO VOTE excludes them from
 
 ## Dealing and balance
 
-Exactly N+K candidates (K=3, 4 or 5); enumerate all possible K-card unused subsets and reject invalid actual factions. All Hollow specialists count as evil everywhere. Specialist uniqueness applies to the candidate pool. Engineers start with two candidates, then increment/decrement one (two removes to zero). Candidate pools require zero or at least two; assignments may contain any legal count. Each night from night one, inspect two other living players and identify all selected Engineer matches at dawn. No automatic partner or absence briefing. Jamming blocks that night; delay/interception and recipient death follow investigative report rules. Void Reaver is permitted at every supported group size. Existing classic pools retain their legal-team behaviour.
+Captains select exactly N+K Crew/special candidates, with K=3/4/5. They cannot add Hollow, including through forged settings. Ship Intelligence secretly selects H Hollow, 1..floor(N/3), and N-H authored candidates. At least one actual Hollow can attack. Copy limits and existing information/defence/recovery budgets apply. Weighted random sampling is bounded; a validated basic-Hollow fallback guarantees termination. Strength weights are provisional, not proven win probabilities.
 
-Advanced deals require information strength >=.75 and <=.8N, with defence plus recovery <=2 below eight players and <=3 otherwise. Strength units and conditional dependencies are defined in public/setup.js. Weighted random dealing also accounts for evil disruption and bonus lethality; then cards shuffle independently of seats. Every admitted subset has positive probability. This is an initial structural balance model, not an optimized win-rate guarantee. Full playtests must tune it.
-
-Snapshot migration fills new role counts/resources without resetting existing matches. Server mutations are serialized; command and deadline results save before broadcasting, with rollback on failed saves. The supported deployment remains a single authoritative server instance.
-
-Echo and Thrall: both selectable. Echo copies a dead Crew ability/resources once, activates next night, retains Crew/Echo identity and spent resources. Dead targets are never filtered by hidden allegiance; Echo/evil targets spend use with “Nothing happened.” Thrall is evil for victory/quotas but scans Crew, has no network/attack vote, and gets one true-allegiance check. Every dealt game requires an attack-capable Hollow besides any Thrall. Detailed copy timing/privacy: INTERACTION_CONTRACT.md.
+Unused Crew/special candidates total K+H. Oracle learns these exact cards, and endgame reveals them; ordinary players do not. Public Script references every possible Hollow, not the selected roster. Legacy active games preserve their saved deal. New, edited, restored legacy lobbies and rematches use the automatic mode. See AUTOMATIC_HOLLOW.md.
 
 ## The Martyr — independent execution victory
 

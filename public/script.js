@@ -1,4 +1,4 @@
-import { canHunt } from './roles.js?v=1.0.1-martyr';
+import { canHunt } from './roles.js?v=1.0.1-auto-hollow';
 // Public resolution reference: never filter this with dealt roles or live choices.
 export const NIGHT_STAGES = [
   {id:'briefing',title:'Private starting briefings',text:'Before dark cycle one: privately open your character and starting briefing. Network members meet; Oracle learns unused cards; Officer learns the assigned Xenobiologist.'},
@@ -44,7 +44,7 @@ export const NIGHT_ORDER = {
   thief:entry(['facts'],['facts'],'Once; exact actual character.'),
   forger:entry(['control'],['control'],'each dark cycle; never repeat a target during the voyage. Delay applies at delivery.'),
   wardbreaker:entry(['control'],['control'],'Suppress selected target’s ordinary protection.'),
-  oracle:entry(['briefing'],[],'Three, four or five unused cards, according to setup; no each dark cycle selection.'),
+  oracle:entry(['briefing'],[],'Unused Crew/special candidates; extra count plus dealt Hollow count; no each dark cycle selection.'),
   parasite:entry(['delivery'],['delivery'],'Once; copies eligible actual deliveries, including due older records.'),
   echo:entry(['facts'],['inherit','facts'],'Copy a dead player once; activates next dark cycle at the copied power’s order. Expired opportunities do not restart.'),
   thrall:entry(['facts'],['facts'],'Once; true-allegiance check. Registers Crew to other allegiance investigators; no attack vote.')

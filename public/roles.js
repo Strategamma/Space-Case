@@ -36,6 +36,6 @@ export const isHollow = role => ROLES[role]?.team === 'hollow';
 export const canHunt = role => isHollow(role) && role !== 'thrall';
 export const scansAsHollow = role => canHunt(role);
 export const powerRole = player => player.role === 'echo' ? player.echoRole || 'echo' : player.role;
-export const DEFAULT_SETTINGS = { playing: true, reveal: true, playerCount: 6, spareCards: 3, discussion: 300, night: 45, roles: { cadet: 5, hollow: 2, xenobiologist: 1, analyst: 1, engineer: 0, observer: 0, assistant: 0, beacon: 0 } };
+export const DEFAULT_SETTINGS = { playing: true, reveal: true, playerCount: 6, spareCards: 3, discussion: 300, night: 45, automaticHollow:true, roles: { cadet: 7, hollow: 0, xenobiologist: 1, analyst: 1, engineer: 0, observer: 0, assistant: 0, beacon: 0 } };
 
 DEFAULT_SETTINGS.roles = { ...Object.fromEntries(Object.keys(ROLES).map(key => [key,0])), ...DEFAULT_SETTINGS.roles };

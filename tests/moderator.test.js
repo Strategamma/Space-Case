@@ -1,3 +1,4 @@
+import { ROLES } from '../public/roles.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { dealPool, dealWeight, startingReports, nightReports, deliverReports } from '../server/moderator.js';
@@ -70,8 +71,8 @@ test('a dead recipient receives no queued private report',()=>{
 test('launch requires the configured number of playing crew, excluding an overseeing Captain',()=>{
   const room=createRoom('Captain');for(let i=1;i<7;i++)addPlayer(room,'Crew '+i);
   assert.throws(()=>act(room,room.host,'start'),/expects 6/);
-  act(room,room.host,'settings',{...room.settings,playing:false});act(room,room.host,'start');assert.equal(room.players.filter(p=>p.role).length,6);assert.equal(room.unused.length,3);
-  assert.equal(project(room,room.host).unused.length,3);
+  act(room,room.host,'settings',{...room.settings,playing:false});act(room,room.host,'start');assert.equal(room.players.filter(p=>p.role).length,6);assert.equal(room.unused.length,3+room.players.filter(p=>p.playing&&ROLES[p.role]?.team==='hollow').length);
+  assert.equal(project(room,room.host).unused.length,room.unused.length);
 });
 
 test('strength weighting prefers more Hollow against richer information, without excluding legal deals',()=>{
