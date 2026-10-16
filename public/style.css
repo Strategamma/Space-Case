@@ -96,3 +96,6 @@ body[data-phase=lobby] .crew-seat{animation:seat-arrive .5s ease-out both}
 
 .topbar .install-button { color:var(--cyan); }
 .install-button[hidden] { display:none; }
+
+/* Keep the opening message centered beneath its wordmark. */
+.hero-copy{text-align:center}.hero h1.hero-wordmark{margin-left:auto;margin-right:auto}.hero-copy>.eyebrow{display:flex;justify-content:center;margin-bottom:18px}.hero-stats{justify-content:center}
