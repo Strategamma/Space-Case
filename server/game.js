@@ -57,6 +57,21 @@ function validateSettings(room, next) {
   const error = poolError(next.playerCount, roles, next.reveal, next.spareCards??3); if (error) fail(error);
   return { playerCount: next.playerCount, spareCards:next.spareCards??3, playing: next.playing, reveal: next.reveal, discussion: next.discussion, night: next.night, roles };
 }
+function tallyBallot(room) {
+  if(room.nomination?.result) return;
+  const eligible=room.eligibleVoters || living(room).map(p=>p.id);
+  if(eligible.some(id=>!(id in room.votes))) return;
+  const yes = Object.values(room.votes).filter(Boolean).length, threshold = Math.max(1,Math.ceil(eligible.length / 2));
+  if (yes >= threshold && yes >= room.high) {
+    if (yes === room.high) { room.block = null; room.tied = true; }
+    else { room.high = yes; room.block = room.nomination.to; room.tied = false; }
+  }
+  const outcome = yes < threshold ? 'below-threshold' : room.block === room.nomination.to ? 'on-block' : yes === room.high && room.tied ? 'tied' : 'lower-total';
+  const result = {yes, spare:eligible.length-yes, total:eligible.length, threshold, outcome, block:room.block, high:room.high, tied:room.tied};
+  room.nomination.result=result;
+  const n = { ...room.nomination, yes, total: eligible.length }; room.nominations.push(n);
+  log(room, `${player(room, n.from).name} nominated ${player(room, n.to).name}: ${yes}/${n.total} voted Execute. ${room.tied ? 'Highest vote tied; nobody is on the block.' : room.block === n.to ? 'Nominee is on the block.' : 'Block unchanged.'}`);
+}
 function resetDay(room, now) {
   room.phase = 'discussion'; room.deadline = now + room.settings.discussion * 1000;
   room.nominations = []; room.nomination = null; room.votes = {}; room.block = null; room.high = 0; room.tied = false;
@@ -171,18 +186,12 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       if(!room.eligibleVoters.length) fail('No eligible voters remain. Close nominations without execution.');
       room.nomination = { from: from.id, to: to.id }; room.votes = {}; room.phase = 'voting'; break;
     }
-    case 'vote': requirePhase(room, 'voting'); requireLiving(room, id); if (!(room.eligibleVoters || living(room).map(p=>p.id)).includes(id)) fail('Your voting is suspended for this light cycle.'); if (typeof data.execute !== 'boolean') fail('Choose Execute or Spare.'); if (id in room.votes) fail('Your ballot is already sealed.'); room.votes[id] = data.execute; break;
+    case 'vote': requirePhase(room, 'voting'); requireLiving(room, id); if (!(room.eligibleVoters || living(room).map(p=>p.id)).includes(id)) fail('Your voting is suspended for this light cycle.'); if (typeof data.execute !== 'boolean') fail('Choose Execute or Spare.'); if (id in room.votes) fail('Your ballot is already sealed.'); room.votes[id] = data.execute; tallyBallot(room); break;
     case 'closeVote': {
       requireCaptain(room, id); requirePhase(room, 'voting');
       const eligible=room.eligibleVoters || living(room).map(p=>p.id);
       if (eligible.some(id=>!(id in room.votes))) fail('Wait for every living eligible crew member to vote.');
-      const yes = Object.values(room.votes).filter(Boolean).length, threshold = Math.max(1,Math.ceil(eligible.length / 2));
-      if (yes >= threshold && yes >= room.high) {
-        if (yes === room.high) { room.block = null; room.tied = true; }
-        else { room.high = yes; room.block = room.nomination.to; room.tied = false; }
-      }
-      const n = { ...room.nomination, yes, total: eligible.length }; room.nominations.push(n);
-      log(room, `${player(room, n.from).name} nominated ${player(room, n.to).name}: ${yes}/${n.total} voted Execute. ${room.tied ? 'Highest vote tied; nobody is on the block.' : room.block === n.to ? 'Nominee is on the block.' : 'Block unchanged.'}`);
+      tallyBallot(room);
       room.nomination = null; room.votes = {}; room.phase = 'nominations'; break;
     }
     case 'execute': {

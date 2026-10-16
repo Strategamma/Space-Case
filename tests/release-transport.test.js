@@ -29,6 +29,7 @@ test('six real clients complete a voyage, score once and rematch without leaking
   await peers[0].command('nominations');await peers[0].command('nominate',{from:peers[0].state.me.id,to:evil.state.me.id});
   for(const p of peers){await p.wait(s=>s.phase==='voting');assert.equal((await p.command('vote',{execute:true})).ok,true);}
   await peers[0].wait(s=>s.votesCast===6);assert.equal(peers[0].state.votes,undefined);
+  for(const p of peers){await p.wait(s=>s.nomination?.result?.yes===6);assert.equal(p.state.nomination.result.outcome,'on-block');assert.equal(p.state.nomination.result.total,6);}
   assert.equal((await peers[0].command('closeVote')).ok,true);await peers[0].wait(s=>s.block===evil.state.me.id);
   assert.equal((await peers[0].command('execute')).ok,true);await peers[0].wait(s=>s.phase==='victory');
   const score=peers[0].state.players.map(p=>p.score);assert.equal(peers[0].state.winner,'crew');

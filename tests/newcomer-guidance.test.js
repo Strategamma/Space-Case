@@ -81,3 +81,12 @@ test('Martyr final reveal names the independent solo winner and awards no other 
   assert.match(text,/You won/);
   state.me={id:'2',role:'cadet',playing:true};assert.match(ui('victory',state)(),/You lost this voyage/);
 });
+
+test('public ballot result shows totals, qualification failure and the existing block clearly',()=>{
+  const state={players:[{id:'a',name:'Nominator'},{id:'b',name:'Suspect'},{id:'c',name:'Earlier suspect'}],nomination:{from:'a',to:'b',result:{yes:2,spare:4,total:6,threshold:3,outcome:'below-threshold',block:'c',high:4,tied:false}}};
+  let text=ui('ballotResult',state)();
+  assert.match(text,/Nominator nominated Suspect/);assert.match(text,/2 Execute/);assert.match(text,/4 Spare/);
+  assert.match(text,/did not reach the minimum of 3/);assert.match(text,/Earlier suspect remains on the block with 4 votes/);
+  state.nomination.result={...state.nomination.result,yes:4,spare:2,outcome:'tied',block:null,tied:true};
+  text=ui('ballotResult',state)();assert.match(text,/block is cleared/);assert.match(text,/Nobody is on the block/);
+});

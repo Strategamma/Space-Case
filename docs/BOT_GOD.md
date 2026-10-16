@@ -17,7 +17,7 @@ Bot God is the authoritative server rule engine. It does not need a language mod
 | Discussion timer | Lobby | 2/3/5/7/10 minutes. |
 | Launch | Lobby | Validate, choose legal secret subset, shuffle assignments independent of seat order, persist before broadcast. |
 | Discussion extension / nominations | Day | Add one minute; record actual nominator and nominee. Bot validates living/once-per-day eligibility. |
-| Close ballot / final nominations | Tribunal | Secret votes come from players, never Captain. Close requires eligible votes; one execution, threshold and ties enforced. |
+| Close ballot / final nominations | Tribunal | Secret votes come from players, never Captain. Totals reveal automatically after every eligible ballot; Captain advances to nominations. One execution, threshold and ties enforced. |
 | Start subsequent night / rematch | Aftermath / victory | Preserve or reset state according to explicit command. |
 
 Captain cannot choose actual assignments, inspect a playing opponent's secrets, select another player's night action, override ballots, force a fake result or end a night based on hidden readiness. Connection loss automatically pauses eligible phases; succession requires player consent.
