@@ -1,7 +1,7 @@
 import { cycleText } from './cycles.js?v=1.0.0';
 import { ROLES, DEFAULT_SETTINGS, isHollow, canHunt } from './roles.js?v=1.0.0';
 import { CARD_LIMITS, factionLimits, poolError, poolSize, evilCount, randomPool, togglePoolRole, adjustPoolCopies } from './setup.js?v=1.0.0';
-import { NIGHT_ORDER, scriptOrder } from './script.js?v=1.0.0';
+import { NIGHT_ORDER, scriptOrder } from './script.js?v=1.0.1-order';
 import { ROLE_GUIDES } from './wiki.js?v=1.0.0';
 import { AVATARS } from './avatars.js';
 
@@ -10,7 +10,7 @@ const app = $('#app'), modal = $('#modal');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 let pendingOrders = false;
 let orderDrafts={ability:null,hunt:null}, orderMode=null, resonanceArmed=false;
-let scriptTab='characters', scriptFirst=true, watchCount=0;
+let scriptTab='characters', scriptFirst=true, scriptAll=false, watchCount=0;
 let poolTeam = 'crew', libraryTeam = 'crew', publicTeam = 'crew';
 let boarding = null, selectedAvatar = null, takenAvatars = [], boardingBusy = false;
 const read = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
@@ -146,7 +146,8 @@ function scriptPanel() {
   const roles=state.settings.roles, spare=state.settings.spareCards??3;
   const tabs=`<div class="script-tabs" role="tablist" aria-label="Script pages">${button('Character sheet','script-characters',scriptTab==='characters'?'secondary':'quiet',`role="tab" id="script-characters-tab" aria-controls="script-content" aria-selected="${scriptTab==='characters'}"`)}${button('Dark cycle order','script-night',scriptTab==='night'?'secondary':'quiet',`role="tab" id="script-night-tab" aria-controls="script-content" aria-selected="${scriptTab==='night'}"`)}</div>`;
   const sheet=['crew','hollow'].map(team=>`<section class="script-faction"><h3>${team==='crew'?'Crew characters':'Hollow characters'}</h3>${Object.entries(roles).filter(([key,n])=>n>0&&ROLES[key].team===team).map(([key,n])=>cardTile(key,n)).join('')||'<p>No possible cards selected.</p>'}</section>`).join('');
-  const order=`<div class="script-night-switch" aria-label="Dark cycle reference">${button('First dark cycle','script-first',scriptFirst?'secondary':'quiet',`aria-pressed="${scriptFirst}"`)}${button('Later dark cycles','script-other',scriptFirst?'quiet':'secondary',`aria-pressed="${!scriptFirst}"`)}</div><p>Input is simultaneous. This is the server’s resolution order, not a schedule for visibly waking players. Listed powers may be unused, spent or inactive.</p>${scriptOrder(roles,scriptFirst).map((stage,i)=>`<article class="night-step"><span class="night-step-number">${String(i+1).padStart(2,'0')}</span><div><h3>${esc(stage.title)}</h3><p>${esc(stage.text)}</p>${stage.cards.map(key=>`<div class="night-role ${isHollow(key)?'night-role-hollow':''}"><strong>${icon(ROLES[key].symbol)} ${esc(ROLES[key].name)}</strong><small>${esc(NIGHT_ORDER[key].note)}</small></div>`).join('')}</div></article>`).join('')}<p class="fine-print">After resolution: deliver private reports, publish light cycle outcomes, then check victory. First dark cycle has no kills. Thrall registers Crew in allegiance investigations; Echo follows its copied power’s timing from the next dark cycle.</p>`;
+  const orderRoles=scriptAll?Object.fromEntries(Object.keys(ROLES).map(key=>[key,1])):roles;
+  const order=`<div class="script-night-switch" aria-label="Reference scope">${button('Saved Script','script-saved',scriptAll?'quiet':'secondary',`aria-pressed="${!scriptAll}"`)}${button('All 30 characters','script-all',scriptAll?'secondary':'quiet',`aria-pressed="${scriptAll}"`)}</div><p>${scriptAll?'Full character reference; these cards are not necessarily in your voyage.':'Only saved candidate cards are listed; shared resolution steps always appear.'}</p><div class="script-night-switch" aria-label="Dark cycle reference">${button('First dark cycle','script-first',scriptFirst?'secondary':'quiet',`aria-pressed="${scriptFirst}"`)}${button('Later dark cycles','script-other',scriptFirst?'quiet':'secondary',`aria-pressed="${!scriptFirst}"`)}</div><p>Input is simultaneous. This is the server’s resolution order, not a schedule for visibly waking players. Listed powers may be unused, spent or inactive.</p>${scriptOrder(orderRoles,scriptFirst).map((stage,i)=>`<article class="night-step"><span class="night-step-number">${String(i+1).padStart(2,'0')}</span><div><h3>${esc(stage.title)}</h3><p>${esc(stage.text)}</p>${stage.cards.map(key=>`<div class="night-role ${isHollow(key)?'night-role-hollow':''}"><strong>${icon(ROLES[key].symbol)} ${esc(ROLES[key].name)}</strong><small>${NIGHT_ORDER[key][scriptFirst?'first':'other'].length===0?'No scheduled effect this cycle. ':''}${esc(NIGHT_ORDER[key].note)}</small></div>`).join('')}</div></article>`).join('')}<p class="fine-print">After resolution: deliver private reports, publish light cycle outcomes, then check victory. First dark cycle has no kills. Thrall registers Crew in allegiance investigations; Echo follows its copied power’s timing from the next dark cycle.</p>`;
   return `<section class="panel roster script-page"><span class="eyebrow cyan">PUBLIC VOYAGE SCRIPT</span><h2>Your crew’s field reference.</h2><p>${state.settings.playerCount} players · ${poolSize(roles)} possible cards · ${spare} backup cadets. This shows the saved candidate pool, not which cards were dealt. Save the Captain’s briefing to update it.</p>${tabs}<div id="script-content" role="tabpanel" aria-labelledby="${scriptTab==='characters'?'script-characters-tab':'script-night-tab'}">${scriptTab==='characters'?sheet:order}</div>${button('Browse all 30 characters','library','quiet full')}</section>`;
 }
 function nightWatch() {
@@ -444,6 +445,7 @@ async function onAction(event) {
   }
   if(action==='clear-pool') {const form=activePoolForm();for(const key of Object.keys(CARD_LIMITS))form.elements[key].value=0;refreshPoolBudget(form);return;}
   if(action==='script-characters'||action==='script-night') {scriptTab=action==='script-characters'?'characters':'night';render();return;}
+  if(action==='script-saved'||action==='script-all') {scriptAll=action==='script-all';render();return;}
   if(action==='script-first'||action==='script-other') {scriptFirst=action==='script-first';render();return;}
   if(action==='night-watch') return nightWatch();
   if(action==='watch-tap') {watchCount++;modal.querySelector('[data-watch-count]').textContent=String(watchCount).padStart(2,'0');return;}

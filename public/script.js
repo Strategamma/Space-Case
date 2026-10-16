@@ -1,3 +1,4 @@
+import { canHunt } from './roles.js?v=1.0.0';
 // Public resolution reference: never filter this with dealt roles or live choices.
 export const NIGHT_STAGES = [
   {id:'briefing',title:'Private starting briefings',text:'Before dark cycle one: privately open your character and starting briefing. Network members meet; Oracle learns unused cards; Officer learns the assigned Xenobiologist.'},
@@ -50,7 +51,12 @@ export const NIGHT_ORDER = {
 for(const key of ['jammer','dreadcaster','leech','breachborn','thief','forger','wardbreaker','parasite']) NIGHT_ORDER[key].first.unshift('briefing');
 export function scriptOrder(roles,first=true) {
   const when=first?'first':'other';
-  return NIGHT_STAGES.map(stage=>({...stage,cards:Object.keys(NIGHT_ORDER).filter(key=>(roles[key]||0)>0&&NIGHT_ORDER[key][when].includes(stage.id))})).filter(stage=>stage.cards.length);
+  const shared = new Set(first ? ['delivery','routine'] : ['inherit','delivery','routine']);
+  return NIGHT_STAGES.map(stage=>({...stage,cards:Object.keys(NIGHT_ORDER).filter(key=>
+    (roles[key]||0)>0 && (NIGHT_ORDER[key][when].includes(stage.id) ||
+      (!first && stage.id==='attack' && canHunt(key)) ||
+      (stage.id==='routine' && NIGHT_ORDER[key][when].length===0))
+  )})).filter(stage=>shared.has(stage.id)||stage.cards.length);
 }
 export function resolutionRank(role,first=false) {
   const stages=NIGHT_ORDER[role]?.[first?'first':'other']||[];

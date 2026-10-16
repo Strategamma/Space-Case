@@ -27,7 +27,7 @@ test('public Script shows possible cards only, regardless of actual assignment o
   assert.deepEqual([...shown].sort(),Object.keys(roles).sort());
   assert.ok(first.find(s=>s.id==='briefing').cards.includes('jammer'));
   assert.ok(!first.some(s=>s.id==='attack'));assert.ok(later.some(s=>s.id==='attack'));
-  assert.ok(!JSON.stringify(first).includes('recipient'));
+  assert.ok(first.every(stage=>Object.keys(stage).every(key=>['id','title','text','cards'].includes(key))));
 });
 test('suggestions and secret 3/4/5-card deals remain valid across all supported group sizes',()=>{
   for(let n=6;n<=15;n++)for(const spare of [3,4,5]) {
@@ -72,4 +72,25 @@ test('Oracle receives configured unused-card count privately and first night aut
   for(const p of room.players.filter(p=>p.playing)){act(room,p.id,'reveal');act(room,p.id,'acknowledge');}
   assert.equal(room.phase,'night');assert.equal(room.day,1);assert.equal(room.unused.length,4);
   assert.equal(project(room,owner.id).me.reports.find(r=>r.kind==='unused').text.split(', ').length,4);
+});
+
+test('cycle reference retains shared steps and unscheduled candidates without leaking assignments',()=>{
+  const roles={cadet:3,hollow:1,medic:1,oracle:1};
+  const first=scriptOrder(roles,true),later=scriptOrder(roles,false);
+  for(const stages of [first,later]) {
+    assert.ok(stages.some(s=>s.id==='delivery'));
+    assert.deepEqual([...new Set(stages.flatMap(s=>s.cards))].sort(),Object.keys(roles).sort());
+  }
+  assert.ok(first.find(s=>s.id==='routine').cards.includes('medic'));
+  assert.ok(later.find(s=>s.id==='routine').cards.includes('oracle'));
+  assert.ok(later.some(s=>s.id==='inherit'));
+  assert.ok(!first.some(s=>['attack','revival','inherit'].includes(s.id)));
+});
+test('all-character reference includes every network member at attack without changing ability ranks',()=>{
+  const roles=Object.fromEntries(Object.keys(ROLES).map(key=>[key,1]));
+  const attack=scriptOrder(roles,false).find(s=>s.id==='attack');
+  for(const key of Object.keys(ROLES).filter(canHunt)) assert.ok(attack.cards.includes(key),key);
+  assert.ok(!attack.cards.includes('thrall'));
+  assert.ok(!scriptOrder(roles,true).some(s=>s.id==='attack'));
+  assert.ok(resolutionRank('jammer')<resolutionRank('xenobiologist'));
 });

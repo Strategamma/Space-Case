@@ -41,3 +41,7 @@ One private surface for card, available action, restrictions/resources and obser
 ## Approved branding
 
 Approved 2026-10-16: matte 3D ivory/navy SPACE CASE wordmark and crimson Hollow vortex, escaping ship and evil red-eyed stowaway. Preserve the fun mission/hidden-enemy theme; abstract badges and flat vector replacements were rejected. Source: output/branding/space-case-approved-full.png. Separate transparent PNG masters: space-case-logo.png and space-case-wordmark.png in that folder, extracted with built-in image generation. Raster artwork, not native SVG; vector recreation remains open. Optimized public/assets/space-case-{logo,wordmark}.webp serve header and responsive landing. New icon-brand-* PNGs serve favicon, Apple and PWA installs; old icons retained. Assets precached in space-case-v20. SVG drafts in output/branding are rejected concepts.
+
+## Dark cycle reference
+
+Saved Script is the default scope; All 30 characters is an explicit public reference, never the dealt roster. Retain shared activation/delivery/routine stages; show cards with no scheduled effect under routine. Include every network-capable Hollow in later collective attacks, excluding Thrall. Reference-only attack membership must not modify NIGHT_ORDER or resolutionRank, which the server uses for ability timing.
