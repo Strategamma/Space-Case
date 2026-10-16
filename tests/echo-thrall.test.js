@@ -17,7 +17,7 @@ function scenario(roles,day=2) {
     dawn:()=>{now=room.deadline;tick(room,now);},next:()=>{room.phase='aftermath';command(0,'night');},
     texts:i=>room.players[i].reports.map(r=>r.text).join('\n')};
 }
-const crewRoles=Object.keys(ROLES).filter(r=>!isHollow(r)&&r!=='echo');
+const crewRoles=Object.keys(ROLES).filter(r=>ROLES[r].team==='crew'&&r!=='echo');
 for(const role of crewRoles)test(`Echo copies ${ROLES[role].name} only from next night with stored resources`,()=>{
   const s=scenario(['echo','hollow',role,'cadet','cadet','cadet']);s.p[2].alive=false;s.p[2].usedOnce=true;s.p[2].sentinelUsed=true;s.p[2].inherited=true;s.p[2].boundId=s.p[4].id;
   s.use(0,[2]);s.dawn();assert.equal(powerRole(s.p[0]),'echo');assert.equal(s.p[0].echoPending.role,role);assert.equal(s.p[0].echoSpent,true);

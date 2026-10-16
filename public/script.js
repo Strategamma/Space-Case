@@ -1,4 +1,4 @@
-import { canHunt } from './roles.js?v=1.0.0';
+import { canHunt } from './roles.js?v=1.0.1-martyr';
 // Public resolution reference: never filter this with dealt roles or live choices.
 export const NIGHT_STAGES = [
   {id:'briefing',title:'Private starting briefings',text:'Before dark cycle one: privately open your character and starting briefing. Network members meet; Oracle learns unused cards; Officer learns the assigned Xenobiologist.'},
@@ -17,6 +17,7 @@ export const NIGHT_STAGES = [
 ];
 const entry=(first,other,note='')=>({first,other,note});
 export const NIGHT_ORDER = {
+  martyr:entry(['routine'],['routine'],'Independent: wins only by actual, unblocked tribunal execution. Counts alongside Crew for Hollow parity; dark cycle kills do not trigger victory.'),
   cadet:entry(['routine'],['routine'],'No special power.'),
   hollow:entry(['briefing'],['attack'],'Network unanimity, dark cycle two onward. Thrall is excluded.'),
   xenobiologist:entry(['facts'],['facts'],'Choose one other living player; survives to receive report.'),

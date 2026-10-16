@@ -6,22 +6,8 @@ import {resolveAbilities,abilityView,huntView} from '../server/abilities.js';
 import {startingReports,deliverReports,dealPool} from '../server/moderator.js';
 import {poolError} from '../public/setup.js';
 
-function scenario(roles,day=2) {
-  const room=createRoom('Crew 0');
-  while(room.players.length<roles.length) addPlayer(room,'Crew '+room.players.length);
-  roles.forEach((role,i)=>Object.assign(room.players[i],{role,revealed:true,acknowledged:true}));
-  room.phase='aftermath';room.day=day-1;
-  let now=Date.now()+5000;
-  const command=(index,action,data={})=>act(room,room.players[index].id,action,data,now);
-  command(0,'night');
-  const use=(index,targets=[],mode)=>command(index,'ability',{targets:targets.map(i=>room.players[i].id),...(mode?{mode}:{})});
-  const pass=index=>command(index,'ability',{pass:true});
-  const hunt=(index,target)=>command(index,'hunt',{targets:[room.players[target].id]});
-  const dawn=()=>{now=room.deadline;tick(room,now);};
-  const next=()=>{room.phase='aftermath';command(0,'night');};
-  const texts=index=>room.players[index].reports.map(r=>r.text).join('\n');
-  return {room,p:room.players,command,use,pass,hunt,dawn,next,texts,now:()=>now};
-}
+import {scenario} from './helpers/character-scenario.js';
+
 const base=(role,n=8)=>[role,'hollow',...Array(n-2).fill('cadet')];
 
 for(const [key,role] of Object.entries(ROLES)) test(`${role.name}: day/dead/paused/hidden capabilities expose no selectable targets`,()=>{
@@ -38,9 +24,8 @@ for(const [key,role] of Object.entries(ROLES)) test(`${role.name}: day/dead/paus
   p.revealed=true;s.room.pause={reason:'connection',remaining:10000};assert.equal(abilityView(s.room,p,s.now()).active,false);assert.throws(()=>s.use(0,[]));
 });
 
-test('all 30 cards are selectable; ten attacking evil identities retain scans and shared attack',()=>{
-  assert.equal(Object.keys(ROLES).length,30);
-  const evil=Object.keys(ROLES).filter(canHunt);assert.equal(evil.length,10);
+test('all attacking evil identities retain scans and shared attack',()=>{
+  const evil=Object.keys(ROLES).filter(canHunt);
   for(const role of evil) {
     const s=scenario(['xenobiologist',role,...Array(6).fill('cadet')]);s.use(0,[1]);
     assert.ok(project(s.room,s.p[1].id).hollow.members.some(p=>p.id===s.p[1].id));

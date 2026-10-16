@@ -129,13 +129,13 @@ export function resolveAbilities(room) {
     if(hasAction?.once) { p.usedOnce=true; committed.add(p.id); }
     if(key==='echo') {
       p.echoSpent=true;
-      if(q.role==='echo'||isHollow(q.role)) add(p,p,'echo-copy','Nothing happened.',false,'dawn');
+      if(q.role==='echo'||ROLES[q.role]?.team!=='crew') add(p,p,'echo-copy','Nothing happened.',false,'dawn');
       else {
         p.echoPending={role:q.role,day:room.day+1,usedOnce:!!q.usedOnce,sentinelUsed:!!q.sentinelUsed,inherited:!!q.inherited,boundId:q.boundId||null};
         add(p,p,'echo-copy',`Copied power: ${ROLES[q.role].name}. Activates next dark cycle; spent resources are preserved.`,false,'dawn');
       }
     }
-    if(key==='thrall') add(p,p,'thrall-scan',`${q.name}: ${isHollow(q.role)?'Hollow allegiance':'Crew allegiance'}.`,true);
+    if(key==='thrall') add(p,p,'thrall-scan',`${q.name}: ${q.role==='martyr'?'Independent allegiance':isHollow(q.role)?'Hollow allegiance':'Crew allegiance'}.`,true);
     if(key==='xenobiologist') add(p,p,'scan',`${q.name}: ${scansAsHollow(q.role)?'Hollow signature detected':'no Hollow signature'}.`,true);
     if(key==='engineer') {
       const matches=targets.filter(t=>t.role==='engineer');

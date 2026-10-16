@@ -32,7 +32,7 @@ Captain cannot choose actual assignments, inspect a playing opponent's secrets, 
 6. Freeze input at the deadline and resolve in the order below. Silent jam never fabricates false results. Echo identity, copied powers, Thrall registration and actual allegiance remain distinct.
 7. Deliver only entitled reports, with original cycle/time, and unread notification dots. Apply delay/interception, death withholding and revival correctly. Publish only finished dawn outcomes; flip all death tokens together, respecting public reveal setting. Do not publish interim parity before revival.
 8. Enforce nominations, frozen eligible-voter denominators, immutable secret ballots, ties and at most one execution. Publish speech/vote restrictions at dawn without source; expire them next night.
-9. Check actual victory after the completed effect batch; award one point per winning teammate exactly once, including dead teammates. Offer rematch.
+9. An unblocked Martyr execution-death wins immediately for that player alone, before ordinary parity checks. Other deaths do not trigger this power. No current role supplies a light-cycle power block; a future effect may set private status.abilityBlocked, cleared next dark cycle. Check ordinary victory after the completed effect batch; award one point per winning teammate exactly once, including dead teammates. Offer rematch.
 10. Persist resources, pending/deferred reports, seating, deadlines and resolution stamps before broadcasts. Serialize mutations, reject stale actions, prevent duplicate resolution, pause/reconnect safely, and roll back failed saves.
 
 Balance is a constrained weighted model, not a proven win-probability optimizer. Suggested pools and admitted deals still need human tests by player count and roster. Offline shell caching cannot keep Internet multiplayer running without its server.
@@ -57,10 +57,11 @@ First night includes setup-only information and Surveyor/Beacon opportunities; a
 
 Finish with public dawn, private eligible delivery/interception and victory. Public Script groups are static dependencies, not evidence a role acted. Echo uses the copied power's order only from its activation night; no new first-night opportunity is created.
 
-## Master character schedule (all 30)
+## Master character schedule (all 31)
 
 | Character | First night / setup | Later nights | Conditions |
 |---|---|---|---|
+| The Martyr | Routine station / no special wake | Routine station / no special wake | Independent; actual, unblocked light-cycle execution ends the game with only the executed Martyr winning. Counts alongside Crew for Hollow parity. Night jamming does not block this power. |
 | Cadet | Routine station / no special wake | Routine station / no special wake | No special power. |
 | The Hollow | Private starting briefings | Resolve attacks and defences | Network unanimity, night two onward. Thrall is excluded. |
 | Xenobiologist | Observe pre-attack facts | Observe pre-attack facts | Choose one other living player; survives to receive report. |
@@ -94,7 +95,7 @@ Finish with public dawn, private eligible delivery/interception and victory. Pub
 
 ## Script UI
 
-A labelled Script button is available throughout a voyage. Character sheet lists the saved public candidate pool, quantities, allegiance, ability and timing. Night order has first/later-night reference views derived from the same schedule metadata. Never filter the Script by actual assignments, alive role owners, resources, jammed actors or tonight's choices; that would leak the hidden deal. The master catalogue still contains all 30 cards. Saving a new lobby briefing updates everyone's Script.
+A labelled Script button is available throughout a voyage. Character sheet lists the saved public candidate pool, quantities, allegiance, ability and timing. Night order has first/later-night reference views derived from the same schedule metadata. Never filter the Script by actual assignments, alive role owners, resources, jammed actors or tonight's choices; that would leak the hidden deal. The master catalogue still contains all 31 cards. Saving a new lobby briefing updates everyone's Script.
 
 ## In-person privacy
 

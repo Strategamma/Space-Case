@@ -54,3 +54,7 @@ See `docs/RELEASE.md` for rollout, rollback and acceptance checks. A PWA caches 
 ## Assets
 
 Original space artwork and portraits are included as optimized WebP. Bundled Space Grotesk uses the SIL Open Font License in `public/assets/FONT-LICENSE.txt`. Reduced motion is supported; terminal audio is opt-in. User-facing phases are light/dark cycles; legacy save/protocol identifiers remain stable.
+
+## Adding characters
+
+Follow [the character expansion workflow](docs/characters/README.md) and copy its contract/test templates. Characters stay in the main library. Run `npm run validate:characters` and `npm run test:characters` before the full release checks.

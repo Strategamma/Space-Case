@@ -1,17 +1,112 @@
-import { ROLES, isHollow, canHunt } from './roles.js?v=1.0.0';
+import { ROLES, isHollow, canHunt } from './roles.js?v=1.0.1-martyr';
 
 export const CARD_LIMITS = Object.fromEntries(Object.keys(ROLES).map(key => [key, key === 'cadet' ? 20 : key === 'hollow' ? 8 : key === 'engineer' ? 18 : 1]));
 export const factionLimits = count => ({ minEvil: 1, maxEvil: Math.floor(count / 3), minGood: count - Math.floor(count / 3) });
 export const poolSize = roles => Object.values(roles).reduce((sum, n) => sum + n, 0);
 export const evilCount = roles => Object.entries(roles).reduce((sum,[key,n]) => sum + (isHollow(key) ? n : 0), 0);
+// Explicit registration prevents new powers silently receiving an unreviewed balance weight.
+export const CHARACTER_BALANCE = {
+  "martyr": {},
+  "cadet": {},
+  "hollow": {},
+  "xenobiologist": {
+    "information": 2
+  },
+  "analyst": {
+    "information": 1.5
+  },
+  "engineer": {
+    "information": 0.75,
+    "requires": {
+      "engineer": 2
+    }
+  },
+  "observer": {
+    "information": 1,
+    "requires": {
+      "xenobiologist": 1
+    }
+  },
+  "assistant": {
+    "information": 0.75
+  },
+  "beacon": {
+    "information": 0.75
+  },
+  "resonance": {
+    "information": 1.5
+  },
+  "warden": {
+    "defence": 1
+  },
+  "medic": {
+    "recovery": 1
+  },
+  "arbiter": {},
+  "proximity": {
+    "information": 1.5
+  },
+  "surveyor": {
+    "information": 0.75
+  },
+  "auditor": {
+    "information": 1
+  },
+  "diver": {
+    "information": 1
+  },
+  "sentinel": {
+    "defence": 1
+  },
+  "stasis": {
+    "defence": 0.5
+  },
+  "cartographer": {
+    "information": 2
+  },
+  "jammer": {
+    "disruption": 1
+  },
+  "dreadcaster": {
+    "disruption": 0.5
+  },
+  "leech": {
+    "disruption": 0.5
+  },
+  "breachborn": {
+    "lethality": 1
+  },
+  "thief": {
+    "disruption": 0.5
+  },
+  "forger": {
+    "disruption": 1
+  },
+  "wardbreaker": {
+    "disruption": 1
+  },
+  "oracle": {
+    "disruption": 0.5
+  },
+  "parasite": {
+    "disruption": 0.75
+  },
+  "echo": {
+    "information": 0.75
+  },
+  "thrall": {}
+};
 export function dealStrength(cards) {
-  const count = key => cards.filter(role => role === key).length, xen = count('xenobiologist');
-  const information = 2*xen + 1.5*count('analyst') + (count('engineer')>1 ? .75*count('engineer'):0) + (xen ? count('observer'):0) + .75*count('assistant') + .75*count('beacon')
-    + 1.5*count('resonance') + 1.5*count('proximity') + .75*count('surveyor') + count('auditor') + count('diver') + 2*count('cartographer') + .75*count('echo');
-  const defence = count('warden') + count('sentinel') + .5*count('stasis');
-  const recovery = count('medic');
-  const disruption = count('jammer') + .5*count('dreadcaster') + .5*count('leech') + count('forger') + count('wardbreaker') + .5*count('thief') + .5*count('oracle') + .75*count('parasite');
-  return { information, defence, recovery, disruption, lethality:count('breachborn') };
+  const counts = {};
+  for (const key of cards) counts[key] = (counts[key] || 0) + 1;
+  const strength = {information:0, defence:0, recovery:0, disruption:0, lethality:0};
+  for (const [key, count] of Object.entries(counts)) {
+    const weight = CHARACTER_BALANCE[key];
+    if (!weight) throw new Error(`Missing character balance registration: ${key}`);
+    if (Object.entries(weight.requires || {}).some(([role, minimum]) => (counts[role] || 0) < minimum)) continue;
+    for (const category of Object.keys(strength)) strength[category] += count * (weight[category] || 0);
+  }
+  return strength;
 }
 export function allowedDeal(cards) {
   const n=cards.length, evil=cards.filter(isHollow).length, {maxEvil}=factionLimits(n), strength=dealStrength(cards);
@@ -73,7 +168,7 @@ export function poolError(count, roles, reveal = false, spareCards=3) {
   const evil=evilCount(roles), {maxEvil,minGood}=factionLimits(count);
   if(evil<1) return 'Include at least one Hollow card.';
   if(!Object.entries(roles).some(([key,n])=>n>0&&canHunt(key))) return 'Include a Hollow network character; Thrall cannot provide the collective attack.';
-  if(evil>maxEvil+spareCards||poolSize(roles)-evil<minGood) return `A valid deal needs at least ${minGood} loyal Crew and 1–${maxEvil} Hollow.`;
+  if(evil>maxEvil+spareCards||poolSize(roles)-evil<minGood) return `A valid deal needs at least ${minGood} ${roles.martyr?'non-Hollow seats (including The Martyr)':'loyal Crew'} and 1–${maxEvil} Hollow.`;
   if(!candidateDeals(count,roles,spareCards).deals.length) return 'This pool has no legal strength mix. Include operative Crew information and reduce stacked information, defence or recovery.';
   return null;
 }

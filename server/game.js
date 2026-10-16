@@ -135,7 +135,7 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       room.unused = deal.unused; room.matchId=randomUUID(); room.resolvedCycle=0; room.deferredReports=[]; room.specialChoices={}; room.executionRecord=null;
       seats.forEach((p, i) => { p.role = deal.assigned[i]; p.alive = true; p.revealed = false; p.acknowledged = false; p.reports = []; p.inherited = false; delete p.echoRole; delete p.echoPending; p.echoSpent=false; p.delayTargets=[]; p.usedOnce=false; p.sentinelUsed=false; p.status={}; p.reportKeys=[]; delete p.boundId; delete p.lastDread; delete p.diedDay; delete p.deathPhase; });
       deliverReports(room, startingReports(room));
-      room.phase = 'orders'; room.log = []; room.day = 0; room.winner = null; room.lastDeaths = []; log(room, 'Sealed orders distributed. Open them privately.'); break;
+      room.phase = 'orders'; room.log = []; room.day = 0; room.winner = null; room.winnerId = null; room.lastDeaths = []; log(room, 'Sealed orders distributed. Open them privately.'); break;
     }
     case 'reveal':
       if (['lobby'].includes(room.phase) || !me.playing || !me.role) fail('No sealed character is available.');
@@ -190,7 +190,14 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       if (room.block) {
         const q=player(room,room.block);
         if(q.status?.stasis===room.day&&living(room).length>=5) log(room,`Execution completed. ${q.name} survived.`);
-        else { q.alive=false; q.diedDay=room.day; q.deathPhase='execution'; room.executionRecord={id:q.id,role:q.role,day:room.day}; room.lastDeaths=[q.id]; log(room,`${q.name} was executed by Emergency Tribunal.`); }
+        else {
+          q.alive=false; q.diedDay=room.day; q.deathPhase='execution'; room.executionRecord={id:q.id,role:q.role,day:room.day}; room.lastDeaths=[q.id]; log(room,`${q.name} was executed by Emergency Tribunal.`);
+          // A future light-cycle blocker may set this private status; night jamming never does.
+          if(q.role==='martyr'&&!q.status?.abilityBlocked) {
+            room.phase='victory'; room.winner='martyr'; room.winnerId=q.id; room.deadline=null; q.score++;
+            log(room,`${q.name}, The Martyr, claimed the tribunal. Only The Martyr wins.`);
+          }
+        }
       }
       else log(room, 'Tribunal closed. No execution this light cycle.');
       room.block = null;
@@ -198,7 +205,7 @@ export function act(room, id, action, data = {}, now = Date.now()) {
     }
     case 'rematch': {
       requireCaptain(room, id); requirePhase(room, 'victory');
-      room.unused = []; room.phase = 'lobby'; room.deadline = null; room.day = 0; room.log = []; room.winner = null; room.block = null; room.lastDeaths = [];
+      room.unused = []; room.phase = 'lobby'; room.deadline = null; room.day = 0; room.log = []; room.winner = null; room.winnerId = null; room.block = null; room.lastDeaths = [];
       for (const p of room.players) { p.role = null; p.alive = true; p.reports = []; p.revealed = false; p.acknowledged = false; p.inherited = false; delete p.echoRole; delete p.echoPending; p.echoSpent=false; p.delayTargets=[]; p.usedOnce=false; p.sentinelUsed=false; p.status={}; p.reportKeys=[]; delete p.boundId; delete p.lastDread; delete p.diedDay; delete p.deathPhase; }
       room.deferredReports=[]; room.specialChoices={}; room.resolvedCycle=0; room.executionRecord=null; break;
     }
@@ -242,6 +249,6 @@ export function project(room, id) {
     me: { id, playing: me.playing, alive: me.alive, powerRole:me.revealed?powerRole(me):null, echo:me.revealed&&me.role==='echo'?{spent:!!me.echoSpent,role:me.echoRole||(me.alive?me.echoPending?.role:null)||null,pending:me.alive&&!!me.echoPending}:undefined, role: me.revealed || room.phase === 'victory' ? me.role : null, revealed: !!me.revealed, inherited: me.inherited, reports: me.revealed ? me.reports : [], acknowledged: me.acknowledged, stationSubmitted: !!room.nightChoices[id], ballot: id in room.votes ? room.votes[id] : null, adjacent: adjacent(room, id), eligibleVote:me.alive&&!(me.status?.noVote), orders: { ability:abilityView(room,me), hunt:huntView(room,me), usedOnce:me.revealed&&me.alive?me.usedOnce:undefined, defenceSpent:me.revealed&&me.alive&&powerRole(me)==='sentinel'?me.sentinelUsed:undefined, boundName:me.revealed&&me.alive&&me.boundId?player(room,me.boundId).name:null, restrictions:me.alive?{mute:!!me.status.mute,noVote:!!me.status.noVote}:{} } },
     hollow: hollow ? { members: living(room).filter(p => canHunt(p.role)).map(p => ({ id: p.id, target: room.phase === 'night' ? room.nightChoices[p.id]?.[0] ?? null : null })), lockedTarget: room.phase === 'night' ? room.lockedTarget : null } : null,
     balance: factionLimits(room.settings.playerCount), unused: overseer || room.phase === 'victory' ? room.unused ?? [] : undefined,
-    log: room.log.slice(-50), nomination: room.nomination, nominations: room.nominations, block: room.block, high: room.high, tied: room.tied, eligibleCount:room.phase==='voting'?(room.eligibleVoters||living(room).map(p=>p.id)).length:living(room).filter(p=>!p.status?.noVote).length, votesCast: Object.keys(room.votes).length, winner: room.winner, lastDeaths: room.lastDeaths
+    log: room.log.slice(-50), nomination: room.nomination, nominations: room.nominations, block: room.block, high: room.high, tied: room.tied, eligibleCount:room.phase==='voting'?(room.eligibleVoters||living(room).map(p=>p.id)).length:living(room).filter(p=>!p.status?.noVote).length, votesCast: Object.keys(room.votes).length, winner: room.winner, winnerId:room.phase==='victory'?room.winnerId:undefined, lastDeaths: room.lastDeaths
   };
 }

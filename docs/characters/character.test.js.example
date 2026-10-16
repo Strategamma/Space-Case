@@ -1,0 +1,16 @@
+// Copy into tests/characters/<stable_id>.test.js. This file is deliberately not executable.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { scenario } from '../helpers/character-scenario.js';
+
+const id = '<stable_id>';
+test(`${id}: resolves its specified power and protects private information`, () => {
+  const s = scenario([id, 'hollow', ...Array(6).fill('cadet')]);
+  // Arrange required resources/status/targets here. For a first-cycle power use scenario(roles, 1).
+  // s.use(playerIndex, [targetIndex], optionalMode);
+  // s.pass(playerIndex); s.hunt(networkIndex, targetIndex); s.dawn();
+  // Assert exact intended effects, non-effects, recipients and spent/remaining resources.
+  assert.fail('Replace with assertions from the completed character contract.');
+});
+// Add separate tests for every applicable row of the interaction matrix.
+// s.next() opens the next dark cycle; s.texts(index) reads actual delivered reports.

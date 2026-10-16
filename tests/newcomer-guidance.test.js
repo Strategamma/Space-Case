@@ -71,3 +71,13 @@ test('final reveal includes fallen winning teammates and public events, excludes
   assert.match(text, /no living Hollow remain/);
   state.winner='hollow'; assert.match(ui('victory',state)(), /equal or outnumber/);
 });
+
+test('Martyr final reveal names the independent solo winner and awards no other player',()=>{
+  const state={winner:'martyr',winnerId:'1',players:[{id:'1',name:'Martyr winner',role:'martyr',playing:true,alive:false,score:1},{id:'2',name:'Loyal player',role:'cadet',playing:true,alive:true,score:0}],me:{id:'1',role:'martyr',playing:true},host:'2',settings:{},log:[],unused:[]};
+  const text=ui('victory',state)();
+  assert.match(text,/THE MARTYR<br>WINS ALONE/);
+  assert.match(text,/Independent · Fallen · Winning team/);
+  assert.equal((text.match(/\+1 POINT/g)||[]).length,1);
+  assert.match(text,/You won/);
+  state.me={id:'2',role:'cadet',playing:true};assert.match(ui('victory',state)(),/You lost this voyage/);
+});
