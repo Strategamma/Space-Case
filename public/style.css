@@ -99,3 +99,25 @@ body[data-phase=lobby] .crew-seat{animation:seat-arrive .5s ease-out both}
 
 /* Keep the opening message centered beneath its wordmark. */
 .hero-copy{text-align:center}.hero h1.hero-wordmark{margin-left:auto;margin-right:auto}.hero-copy>.eyebrow{display:flex;justify-content:center;margin-bottom:18px}.hero-stats{justify-content:center}
+/* Command is a view, not a scroll target. Keep a single mounted set of forms. */
+.command-entry{margin:0 0 18px}.command-selected{grid-template-columns:minmax(0,1fr)}
+.command-selected>.main-deck{display:none}.command-selected>.command-panel{position:static;display:flex;max-width:740px;width:100%;margin:auto}
+.command-selected .captain-controls{order:-1}.command-selected .voyage-card{position:static}
+.saved-voyages{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}.saved-voyages .button{margin-top:8px}
+textarea{display:block;width:100%;min-height:110px;padding:12px;margin:10px 0 18px;border:1px solid #496673;border-radius:10px;background:#0b1823;color:var(--text);font:inherit;overflow-wrap:anywhere}
+.private-reports{margin:18px 0}.private-reports>h3{font-size:20px}.private-report{border:1px solid #3f5e6d;border-radius:12px;padding:16px;margin:12px 0;background:#112632}
+.private-report h4{font-size:16px;line-height:1.5;margin:0 0 10px}.private-report p{border:0;padding:0;font-size:16px!important;line-height:1.7;margin:10px 0}
+.private-report .report-timing{font-size:14px!important;color:#c3d8e0}.private-report .report-new{display:inline-block;font-size:12px;color:var(--cyan);margin-left:8px}
+.private-reports summary,.character-reference summary{font-size:16px;min-height:44px;padding:12px 0;cursor:pointer}
+.duty-card p,.duty-card small,.role-wiki li,.role-wiki h4{font-size:16px;line-height:1.65}.duty-card small{color:#c3d8e0}
+.editor-card-list .pool-select>.pool-description{display:block;font-size:15px;-webkit-line-clamp:unset;overflow:visible}.editor-card-list .role-wiki{padding:0 12px 12px}
+.command-unavailable{color:#ffceaa;font-size:15px!important}
+@media(max-width:780px){.game-layout:not(.command-selected)>.command-panel{display:none}.command-selected .captain-controls{padding:20px}.command-selected .voyage-card{display:block}.command-selected .voyage-card>*{margin-bottom:12px}}
+@media(max-width:560px){.editor-card-list{grid-template-columns:1fr}.orders-dialog .private-card p{font-size:16px}.private-card .eyebrow{font-size:11px}.deck-tabs{overflow-x:auto}}
+.command-back{order:-2}.command-selected .captain-controls:focus{outline:2px solid var(--cyan);outline-offset:3px}
+.command-selected .captain-controls{display:flex;flex-direction:column}
+.command-selected .captain-controls>[data-action=captain-handbook]{order:2;margin-top:20px}
+body[data-view=command] .phase-banner{padding:16px 20px;margin-bottom:16px}
+body[data-view=command] .phase-banner h1{font-size:25px;margin:6px 0 0}
+body[data-view=command] .phase-banner p,body[data-view=command] .phase-insignia{display:none}
+body[data-view=command] .phase-clock>span{font-size:28px}

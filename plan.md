@@ -1,7 +1,6 @@
-Goal: Captain selects only Crew/special candidates; Ship Intelligence secretly chooses Hollow.
-Scope: N+K non-Hollow pool, automatic legal dealing, server enforcement, script/library presentation, Oracle/unused semantics and legacy-room compatibility.
-Approach: preserve existing deal helpers for active legacy rooms; new/edited/rematched lobbies use automatic Hollow mode. Draw N-H candidates plus H engine-selected Hollow; unused count K+H. Public references show every possible Hollow, never actual selection.
-Risks: secrecy leaks, invalid/expensive generation, changed unused counts, restoring old rooms, tests assuming host-picked Hollow.
-Verification: player-count/backup matrix, adversarial randomness, forged settings rejection, recipient secrecy, Oracle/restore/rematch and full release/PWA/browser checks.
-
-State: implemented; 256 tests, syntax/catalogue and PWA checks pass. 320/390px editor has no Hollow controls/overflow; randomize/apply/save verified without browser errors. Active legacy rooms retained. Deployment, physical devices and group balance remain unverified.
+Goal: address group-playtest blockers and first-player comprehension.
+Scope: actual-seat setup/+3, visible Command, ordered private reports/help and authenticated seat recovery.
+Approach: implemented server-derived counts and Cadet filler, fixed new pools with legacy-active preservation, real Command selection, phase-led orders, room-indexed passes and private transfer, idempotent/retry-safe recovery and persisted takeover.
+Risks: secrets remain server-filtered; no recovery without a pass/backup or surviving room state. Physical Pixel/Samsung behavior remains unverified.
+Verification: Node 24 syntax/catalogue/PWA checks; full 263-test suite plus explicit-update and targeted recovery tests; actual Chrome touch contexts at 320/390 verified Command → nominations → next dark cycle, code-entry restoration and deliberate takeover. Private report/unread, cross-browser pass transfer, late-join draft retention and non-host Settings access also passed. See change plan for limits.
+State: local implementation, no commit/push/deployment. Physical Android, hosted multiplayer, installed-PWA and PostgreSQL integration checks remain open.

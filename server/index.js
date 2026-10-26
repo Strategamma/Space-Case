@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
-import { act, addPlayer, connection, createRoom, ensureAvatars, project, tick } from './game.js';
+import { act, addPlayer, connection, createRoom, ensureAvatars, project, tick, syncLobby } from './game.js';
 import { openStore } from './store.js';
 
 const root = fileURLToPath(new URL('../public/', import.meta.url));
@@ -52,12 +52,13 @@ const persist = async room => {
   catch(error) {console.error('Snapshot failed:',error.message);throw new Error('The ship could not save this transmission. Try again in a moment.');}
 };
 let stateWork=Promise.resolve();
+const rejectCommand = (message, code) => { throw Object.assign(new Error(message), {code}); };
 const serial=work=>{const next=stateWork.then(work);stateWork=next.catch(()=>{});return next;};
 io.on('connection', socket => {
   let requests = [], busy = false;
   socket.on('command', (message, reply = () => {}) => serial(async () => {
     if (typeof reply !== 'function') return;
-    let changedRoom=null, previousRoom=null; const previousSocket={...socket.data};
+    let changedRoom=null, previousRoom=null, takeover=[]; const previousSocket={...socket.data};
     try {
       const now = Date.now(); requests = requests.filter(t => now - t < 10_000); requests.push(now);
       if (requests.length > 60) throw new Error('Too many transmissions. Try again in a moment.');
@@ -68,32 +69,35 @@ io.on('connection', socket => {
       if (action === 'inspect') {
         if (socket.data.code) throw new Error('You are already aboard.');
         const room = typeof data.code === 'string' ? rooms.get(data.code.trim().toUpperCase()) : null;
-        if (!room) throw new Error('That voyage was not found. Check the boarding code.');
+        if (!room) rejectCommand('That voyage was not found. Check the code; it may have expired. Ask the Captain to start a new voyage if it is no longer available.', 'ROOM_NOT_FOUND');
         if (room.phase !== 'lobby') throw new Error('This voyage has already launched.');
         socket.data.inspectCode = room.code;
         reply({ ok: true, availability: availability(room) });
       } else if (action === 'uninspect') {
         delete socket.data.inspectCode; reply({ ok: true });
       } else if (['create', 'join', 'resume'].includes(action)) {
-        if (socket.data.code) throw new Error('Leave your current voyage first.');
+        const requestedCode=typeof data.code==='string'?data.code.trim().toUpperCase():null;
+        if (socket.data.code && !(action === 'resume' && socket.data.code === requestedCode && rooms.get(socket.data.code)?.players.some(p=>p.id===socket.data.player && p.token===data.token))) rejectCommand('Leave your current voyage first.', 'ALREADY_ABOARD');
         let room, me;
         if (action === 'create') {
           if (rooms.size >= 300) throw new Error('All docks are busy. Try again later.');
           room = createRoom(data.name, data.avatar); while (rooms.has(room.code)) room = createRoom(data.name, data.avatar); rooms.set(room.code, room); me = room.players[0]; changedRoom=room;
         } else {
           if (typeof data.code !== 'string') throw new Error('Enter a six-character boarding code.');
-          room = rooms.get(data.code.trim().toUpperCase()); if (!room) throw new Error('That voyage was not found. Check the boarding code.');
+          room = rooms.get(data.code.trim().toUpperCase()); if (!room) rejectCommand('That voyage was not found. Check the code; it may have expired. Ask the Captain to start a new voyage if it is no longer available.', 'ROOM_NOT_FOUND');
           changedRoom=room; previousRoom=structuredClone(room);
           if (action === 'resume') {
-            me = room.players.find(p => p.token === data.token); if (!me) throw new Error('Your boarding pass has expired.');
-            for (const other of io.sockets.sockets.values()) if (other.id !== socket.id && other.data.code === room.code && other.data.player === me.id) { other.data = {}; other.disconnect(true); }
+            me = room.players.find(p => p.token === data.token); if (!me) rejectCommand('Your boarding pass has expired or this berth was released.', 'PASS_INVALID');
+            takeover = [...io.sockets.sockets.values()].filter(other=>other.id !== socket.id && other.data.code === room.code && other.data.player === me.id);
             connection(room, me.id, true);
           } else {
             if (room.phase !== 'lobby') throw new Error('This voyage has launched. You can rejoin only with your saved boarding pass.');
             me = addPlayer(room, data.name, true, data.avatar);
           }
         }
-        socket.data = { code: room.code, player: me.id }; await persist(room); reply({ ok: true, session: { code: room.code, token: me.token } }); emit(room);
+        socket.data = { code: room.code, player: me.id }; await persist(room);
+        for (const other of takeover) { other.emit('session-moved'); other.data = {}; other.disconnect(true); }
+        reply({ ok: true, session: { code: room.code, token: me.token } }); emit(room);
       } else {
         const room = rooms.get(socket.data.code); if (!room) throw new Error('Board a ship first.');
         changedRoom=room; previousRoom=structuredClone(room);
@@ -103,13 +107,14 @@ io.on('connection', socket => {
           if (room.phase === 'lobby' && room.players.length > 1) {
             room.players = room.players.filter(p => p.id !== me.id);
             if (room.host === me.id) { room.host = room.players[0].id; room.settings.playing = room.players[0].playing; }
+            syncLobby(room);
           } else connection(room, me.id, false);
         } else act(room, socket.data.player, action, data);
-        await persist(room); reply({ ok: true }); emit(room);
+        await persist(room); reply({ ok: true, retained: action === 'leave' && room.players.some(p=>p.id===previousSocket.player) }); emit(room);
       }
     } catch (error) {
       if(changedRoom) { if(previousRoom) { for(const key of Object.keys(changedRoom)) delete changedRoom[key]; Object.assign(changedRoom,previousRoom); } else rooms.delete(changedRoom.code); socket.data=previousSocket; }
-      reply({ ok: false, error: error.message });
+      reply({ ok: false, error: error.message, code: error.code || 'RETRY' });
     }
     finally { busy = false; }
   }));

@@ -41,15 +41,15 @@ test('suggestions and secret 3/4/5-card deals remain valid across all supported 
     }
   }
 });
-test('spare-card configuration is validated and retained across settings, deal and restoration',()=>{
+test('new voyages enforce +3; restored active legacy voyages retain their deal',()=>{
   const room=createRoom('Captain');for(let i=1;i<6;i++)addPlayer(room,'Crew '+i);
-  assert.throws(()=>act(room,room.host,'settings',{...room.settings,spareCards:2}),/3, 4 or 5/);
-  const roles=suggestCrewPool(6,5);act(room,room.host,'settings',{...room.settings,roles,spareCards:5});
-  act(room,room.host,'start');assert.equal(room.unused.length,5+room.players.filter(p=>isHollow(p.role)).length);
+  for(const spareCards of [2,4,5])assert.throws(()=>act(room,room.host,'settings',{...room.settings,spareCards}),/exactly 3/);
+  act(room,room.host,'start');assert.equal(room.unused.length,3+room.players.filter(p=>isHollow(p.role)).length);
   assert.equal(project(room,room.host).unused,undefined);
-  assert.equal(project(room,room.host).settings.spareCards,5);
-  const restored=JSON.parse(JSON.stringify(room));ensureAvatars(restored);assert.equal(restored.settings.spareCards,5);
-  delete restored.settings.spareCards;ensureAvatars(restored);assert.equal(restored.settings.spareCards,3);
+  const restored=JSON.parse(JSON.stringify(room));restored.settings.spareCards=5;
+  const unused=[...restored.unused];ensureAvatars(restored);
+  assert.equal(restored.settings.spareCards,5);assert.deepEqual(restored.unused,unused);
+  restored.phase='victory';act(restored,restored.host,'rematch');assert.equal(restored.settings.spareCards,3);
 });
 test('last private acknowledgement starts night one exactly once; disconnected seats prevent automatic start',()=>{
   const room=createRoom('Captain');for(let i=1;i<6;i++)addPlayer(room,'Crew '+i);
@@ -63,15 +63,15 @@ test('last private acknowledgement starts night one exactly once; disconnected s
 
 test('Oracle receives configured unused-card count privately and first night auto-starts for an overseeing Captain',()=>{
   const room=createRoom('Captain');for(let i=1;i<7;i++)addPlayer(room,'Crew '+i);
-  const roles=suggestCrewPool(6,4);
-  act(room,room.host,'settings',{...room.settings,playing:false,spareCards:4,roles});act(room,room.host,'start');
+  const roles=suggestCrewPool(6,3);
+  act(room,room.host,'settings',{...room.settings,playing:false,spareCards:3,roles});act(room,room.host,'start');
   const dealtHollow=room.players.filter(p=>p.playing&&isHollow(p.role)).length;
   const owner=room.players.find(p=>p.playing);owner.role='oracle';
   // A deliberate reveal gates the private report even when the card was forced in this scenario.
   owner.reports=[];owner.reportKeys=[];deliverReports(room,startingReports(room));
   assert.deepEqual(project(room,owner.id).me.reports,[]);
   for(const p of room.players.filter(p=>p.playing)){act(room,p.id,'reveal');act(room,p.id,'acknowledge');}
-  assert.equal(room.phase,'night');assert.equal(room.day,1);assert.equal(room.unused.length,4+dealtHollow);
+  assert.equal(room.phase,'night');assert.equal(room.day,1);assert.equal(room.unused.length,3+dealtHollow);
   assert.equal(project(room,owner.id).me.reports.find(r=>r.kind==='unused').text.split(', ').length,room.unused.length);
 });
 

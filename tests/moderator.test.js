@@ -68,9 +68,9 @@ test('a dead recipient receives no queued private report',()=>{
   const room=scenario(['xenobiologist','hollow','cadet','cadet','cadet','cadet']), p=room.players;
   room.nightChoices={[p[0].id]:[p[1].id]};const notes=nightReports(room);p[0].alive=false;deliverReports(room,notes);assert.deepEqual(p[0].reports,[]);
 });
-test('launch requires the configured number of playing crew, excluding an overseeing Captain',()=>{
+test('launch derives playing crew count and excludes an overseeing Captain',()=>{
   const room=createRoom('Captain');for(let i=1;i<7;i++)addPlayer(room,'Crew '+i);
-  assert.throws(()=>act(room,room.host,'start'),/expects 6/);
+  assert.equal(room.settings.playerCount,7);
   act(room,room.host,'settings',{...room.settings,playing:false});act(room,room.host,'start');assert.equal(room.players.filter(p=>p.role).length,6);assert.equal(room.unused.length,3+room.players.filter(p=>p.playing&&ROLES[p.role]?.team==='hollow').length);
   assert.equal(project(room,room.host).unused.length,room.unused.length);
 });

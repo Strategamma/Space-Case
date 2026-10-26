@@ -13,17 +13,28 @@ const log = (room, text) => room.log.push({ id: randomUUID(), text, day: room.da
 const requirePhase = (room, ...phases) => { if (!phases.includes(room.phase)) fail('That action is not available in this phase.'); };
 const requireCaptain = (room, id) => { if (room.host !== id) fail('Only the Captain can do that.'); };
 const requireLiving = (room, id) => { const p = player(room, id); if (!p.playing || !p.alive) fail('Only living crew may do that.'); return p; };
+export function syncLobby(room) {
+  if (room.phase !== 'lobby') return;
+  const count = crew(room).length;
+  const roles = room.settings.roles;
+  const others = Object.entries(roles).reduce((sum,[key,n]) => sum + (key === 'cadet' ? 0 : n),0);
+  roles.cadet = Math.max(0, Math.max(6,count) + 3 - others);
+  room.settings.playerCount = count;
+  room.settings.spareCards = 3;
+}
 function automaticSetup(room) {
-  const count=room.settings.playerCount||6, spare=room.settings.spareCards??3;
+  const count = Math.max(6,crew(room).length);
   const roles={...Object.fromEntries(Object.keys(ROLES).map(key=>[key,0])),...room.settings.roles};
-  for(const key of Object.keys(roles))if(isHollow(key))roles[key]=0;
-  roles.cadet+=Math.max(0,count+spare-Object.values(roles).reduce((a,b)=>a+b,0));
-  room.settings={...room.settings,automaticHollow:true,roles:crewPoolError(count,roles,room.settings.reveal,spare)?suggestCrewPool(count,spare):roles};
+  for(const key of Object.keys(roles)) if(isHollow(key)) roles[key]=0;
+  room.settings={...room.settings,automaticHollow:true,spareCards:3,roles};
+  syncLobby(room);
+  if(crewPoolError(count,roles,room.settings.reveal,3)) room.settings.roles=suggestCrewPool(count,3);
 }
 export function ensureAvatars(room) {
   room.settings.roles = {...Object.fromEntries(Object.keys(ROLES).map(key=>[key,0])),...room.settings.roles};
   initAbilities(room);
   if(room.phase==='lobby'&&!room.settings.automaticHollow)automaticSetup(room);
+  syncLobby(room);
   room.settings.spareCards ??= 3;
   room.settings.playerCount ??= Math.max(6, crew(room).length);
   room.settings.roles.cadet ??= Math.max(0, room.settings.playerCount + room.settings.spareCards - Object.values(room.settings.roles).reduce((a,b) => a+b, 0));
@@ -42,7 +53,7 @@ export function addPlayer(room, name, playing = true, avatar) {
   if (!Number.isInteger(avatar) || !AVATARS[avatar]) fail('Choose a valid crew avatar.');
   if (room.players.some(p => p.avatar === avatar)) fail('That avatar was just claimed. Choose another crew avatar.');
   const p = { id: randomUUID(), token: randomBytes(32).toString('hex'), name: name.trim(), avatar, playing, online: true, alive: true, score: 0, role: null, reports: [], revealed: false, acknowledged: false };
-  room.players.push(p); return p;
+  room.players.push(p); syncLobby(room); return p;
 }
 export function createRoom(name, avatar) {
   const room = { code: randomBytes(3).toString('hex').toUpperCase(), host: null, players: [], settings: structuredClone(DEFAULT_SETTINGS), phase: 'lobby', day: 0, log: [], deadline: null, pause: null, consent: [], votes: {}, nomination: null, nominations: [], block: null, high: 0, tied: false, nightChoices: {}, lockedTarget: null, winner: null, lastDeaths: [] };
@@ -62,8 +73,10 @@ function validateSettings(room, next) {
   if (roles.observer && !roles.xenobiologist) fail('The Observatory Officer needs a possible Xenobiologist.');
   const count = crew(room).length + (next.playing ? 1 : 0) - (player(room, room.host).playing ? 1 : 0);
   if (count > 15) fail('All fifteen berths are occupied.');
-  const error = crewPoolError(next.playerCount, roles, next.reveal, next.spareCards??3); if (error) fail(error);
-  return { automaticHollow:true, playerCount: next.playerCount, spareCards:next.spareCards??3, playing: next.playing, reveal: next.reveal, discussion: next.discussion, night: next.night, roles };
+  if(count!==crew(room).length && Object.values(roles).reduce((a,b)=>a+b,0)===Math.max(6,crew(room).length)+3) roles.cadet=Math.max(0,roles.cadet+Math.max(6,count)-Math.max(6,crew(room).length));
+  if (next.spareCards !== undefined && next.spareCards !== 3) fail('Voyages use exactly 3 extra candidates.');
+  const error = crewPoolError(Math.max(6,count), roles, next.reveal, 3); if (error) fail(error);
+  return { automaticHollow:true, playerCount: count, spareCards:3, playing: next.playing, reveal: next.reveal, discussion: next.discussion, night: next.night, roles };
 }
 function tallyBallot(room) {
   if(room.nomination?.result) return;
@@ -132,7 +145,7 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       requireCaptain(room, id); requirePhase(room, 'lobby');
       const target = player(room, data.id);
       if (target.id === room.host) fail('The Captain cannot remove their own berth.');
-      room.players = room.players.filter(p => p.id !== target.id); break;
+      room.players = room.players.filter(p => p.id !== target.id); syncLobby(room); break;
     }
     case 'move-seat': {
       requireCaptain(room, id); requirePhase(room, 'lobby');
@@ -145,13 +158,13 @@ export function act(room, id, action, data = {}, now = Date.now()) {
     }
     case 'settings': {
       requireCaptain(room, id); requirePhase(room, 'lobby');
-      room.settings = validateSettings(room, data); me.playing = data.playing; break;
+      room.settings = validateSettings(room, data); me.playing = data.playing; syncLobby(room); break;
     }
     case 'start': {
       requireCaptain(room, id); requirePhase(room, 'lobby');
       const seats = crew(room);
       if (seats.length < 6 || seats.length > 15) fail('You need 6–15 crew members to launch.');
-      if (seats.length !== room.settings.playerCount) fail(`The briefing expects ${room.settings.playerCount} players. Update the player count or wait for the crew.`);
+      syncLobby(room);
       if (seats.some(p => !p.online)) fail('Wait for all crew members to reconnect.');
       const error=(room.settings.automaticHollow?crewPoolError:poolError)(seats.length,room.settings.roles,room.settings.reveal,room.settings.spareCards??3); if(error) fail(error);
       const deal = (room.settings.automaticHollow?dealAutomaticHollow:dealPool)(seats.length, room.settings.roles,undefined,room.settings.spareCards??3);
@@ -233,7 +246,7 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       const online = room.players.filter(p => p.online && p.playing);
       if (online.length && online.every(p => room.consent.includes(p.id))) {
         room.host = online[0].id; const remaining = room.pause.remaining;
-        room.settings.playing = online[0].playing;
+        room.settings.playing = online[0].playing; syncLobby(room);
         room.pause = ['night','voting'].includes(room.phase) && living(room).some(p => !p.online) ? { reason: 'connection', remaining } : null;
         room.consent = []; if (remaining !== null) room.deadline = now + remaining;
         log(room, `${online[0].name} accepted command with the connected crew’s agreement.`);

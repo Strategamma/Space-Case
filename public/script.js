@@ -1,4 +1,4 @@
-import { canHunt } from './roles.js?v=1.0.1-auto-hollow';
+import { canHunt } from './roles.js?v=1.0.2-playtest';
 // Public resolution reference: never filter this with dealt roles or live choices.
 export const NIGHT_STAGES = [
   {id:'briefing',title:'Private starting briefings',text:'Before dark cycle one: privately open your character and starting briefing. Network members meet; Oracle learns unused cards; Officer learns the assigned Xenobiologist.'},

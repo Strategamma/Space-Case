@@ -53,12 +53,14 @@ test('fifteen clients and an overseeing Captain preserve recipient privacy',asyn
   const server=await boot(join(await mkdtemp(join(tmpdir(),'spacecase-fifteen-')),'rooms.json'));
   const captain=new Peer(server.url),peers=[captain];t.after(async()=>{peers.forEach(p=>p.close());await server.stop();});
   const created=await captain.command('create',{name:'Overseer'});await captain.wait(s=>s.phase==='lobby');
-  const roles=Object.fromEntries(Object.keys(ROLES).map(key=>[key,0]));Object.assign(roles,{xenobiologist:1,cadet:19});
-  assert.equal((await captain.command('settings',{...captain.state.settings,playing:false,playerCount:15,spareCards:5,roles})).ok,true);
+  const roles=Object.fromEntries(Object.keys(ROLES).map(key=>[key,0]));Object.assign(roles,{xenobiologist:1,cadet:17});
+  assert.equal((await captain.command('settings',{...captain.state.settings,playing:false})).ok,true);
   for(let i=0;i<15;i++){const p=new Peer(server.url);peers.push(p);assert.equal((await p.command('join',{code:created.session.code,name:'Voyager '+i})).ok,true);}
   const extra=new Peer(server.url);peers.push(extra);assert.equal((await extra.command('join',{code:created.session.code,name:'Extra'})).ok,false);
+  await captain.wait(s=>s.players.length===16);
+  assert.equal((await captain.command('settings',{...captain.state.settings,roles})).ok,true);
   assert.equal((await captain.command('start')).ok,true);await captain.wait(s=>s.phase==='orders');
-  assert.equal(captain.state.players.filter(p=>p.role).length,15);assert.equal(captain.state.unused.length,5+captain.state.players.filter(p=>p.playing&&isHollow(p.role)).length);
+  assert.equal(captain.state.players.filter(p=>p.role).length,15);assert.equal(captain.state.unused.length,3+captain.state.players.filter(p=>p.playing&&isHollow(p.role)).length);
   assert.equal((await captain.command('reveal')).ok,false);
   for(const p of peers.slice(1,16)){await p.wait(s=>s.phase==='orders');assert.equal(p.state.unused,undefined);assert.ok(p.state.players.every(q=>q.role===undefined));await p.command('reveal');await p.wait(s=>s.me.revealed);assert.ok(p.state.me.role);assert.equal(JSON.stringify(p.state).includes('token'),false);}
 });

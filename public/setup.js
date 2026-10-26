@@ -1,4 +1,4 @@
-import { ROLES, isHollow, canHunt } from './roles.js?v=1.0.1-auto-hollow';
+import { ROLES, isHollow, canHunt } from './roles.js?v=1.0.2-playtest';
 
 export const CARD_LIMITS = Object.fromEntries(Object.keys(ROLES).map(key => [key, key === 'cadet' ? 20 : key === 'hollow' ? 8 : key === 'engineer' ? 18 : 1]));
 export const factionLimits = count => ({ minEvil: 1, maxEvil: Math.floor(count / 3), minGood: count - Math.floor(count / 3) });

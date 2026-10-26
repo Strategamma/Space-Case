@@ -1,4 +1,4 @@
-import { ROLES } from './roles.js?v=1.0.1-auto-hollow';
+import { ROLES } from './roles.js?v=1.0.2-playtest';
 
 // Public rules only: never derive reference text from a player's private assignment.
 const interactions = {
