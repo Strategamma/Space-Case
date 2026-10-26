@@ -1,6 +1,6 @@
-Goal: address group-playtest blockers and first-player comprehension.
-Scope: actual-seat setup/+3, visible Command, ordered private reports/help and authenticated seat recovery.
-Approach: implemented server-derived counts and Cadet filler, fixed new pools with legacy-active preservation, real Command selection, phase-led orders, room-indexed passes and private transfer, idempotent/retry-safe recovery and persisted takeover.
-Risks: secrets remain server-filtered; no recovery without a pass/backup or surviving room state. Physical Pixel/Samsung behavior remains unverified.
-Verification: Node 24 syntax/catalogue/PWA checks; full 263-test suite plus explicit-update and targeted recovery tests; actual Chrome touch contexts at 320/390 verified Command → nominations → next dark cycle, code-entry restoration and deliberate takeover. Private report/unread, cross-browser pass transfer, late-join draft retention and non-host Settings access also passed. See change plan for limits.
-State: local implementation, no commit/push/deployment. Physical Android, hosted multiplayer, installed-PWA and PostgreSQL integration checks remain open.
+Goal: make nominations feel like a game, remove dropdown menus, clarify Captain private orders.
+Scope: two-step portrait nominations, explicit matchup confirmation, timer chips, updated interactive preview; retain server nomination/ballot rules.
+Approach: implemented public crew-card selection with living/unused eligibility, self-nomination, draft persistence and explicit confirmation. My orders remains private to the playing Captain; overseers have no own character. Update action moved into Settings to prevent header overflow.
+Risks: private data must remain server-filtered; no automatic execution from portrait taps; physical Android remains unverified.
+Verification: Node 24 check and 16 targeted tests pass. Actual Chrome touch contexts at 320/390 verified portrait nomination → Captain ballot → continuation → dark cycle 2, rejoining, screen takeover and dock hit targets. Preview has no dropdowns and supports opening/concealing sample private orders; checked at 320px with no overflow/errors.
+State: current changes uncommitted; no deployment performed in this turn. Physical Pixel/Samsung and hosted/PWA checks remain open.

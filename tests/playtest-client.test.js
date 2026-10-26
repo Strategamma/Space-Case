@@ -56,3 +56,19 @@ test('production service worker activates a waiting update only on the explicit 
   await new Promise(resolve=>listeners.message({data:{type:'ACTIVATE_UPDATE'},waitUntil:promise=>promise.then(resolve)}));
   assert.equal(activations,1);
 });
+
+test('nomination portraits enforce living/unused seats, preserve valid choices and allow self-nomination',()=>{
+  const people=[{id:'a',name:'Casey',playing:true,alive:true,avatar:0},{id:'b',name:'Nova',playing:true,alive:true,avatar:1},{id:'c',name:'Fallen',playing:true,alive:false,avatar:2},{id:'d',name:'Observer',playing:false,alive:true,avatar:3}];
+  const context=vm.createContext({state:{players:people,nominations:[],me:{id:'a'}},nominationChoice:{from:'',to:''},esc:String,avatar:i=>`portrait-${i}`,button:()=>'',icon:()=>''});
+  vm.runInContext(extract('nominationPicker'),context);
+  const first=context.nominationPicker();assert.match(first,/Who is nominating/);assert.match(first,/data-id="a"/);assert.doesNotMatch(first,/data-id="c"|data-id="d"|<select/);
+  context.nominationChoice={from:'a',to:''};assert.match(context.nominationPicker(),/Self-nomination allowed/);
+  context.nominationChoice={from:'a',to:'a'};const self=context.nominationPicker();assert.match(self,/Casey nominates Casey/);assert.match(self,/Open secret ballot/);
+  context.state.nominations=[{from:'a',to:'b'}];context.nominationPicker();assert.equal(context.nominationChoice.from,'');
+  context.nominationChoice={from:'b',to:'b'};const restricted=context.nominationPicker();assert.equal(context.nominationChoice.to,'');assert.match(restricted,/data-id="b" disabled/);
+});
+
+test('game setup and nominations contain no native dropdown controls',()=>{
+  assert.doesNotMatch(source,/<select\b|<option\b/);
+  assert.match(source,/type="radio" name="discussion"/);assert.match(source,/type="radio" name="night"/);
+});
