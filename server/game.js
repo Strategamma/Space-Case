@@ -78,7 +78,7 @@ function validateSettings(room, next) {
   const error = crewPoolError(Math.max(6,count), roles, next.reveal, 3); if (error) fail(error);
   return { automaticHollow:true, playerCount: count, spareCards:3, playing: next.playing, reveal: next.reveal, discussion: next.discussion, night: next.night, roles };
 }
-function tallyBallot(room) {
+function tallyBallot(room, now=Date.now()) {
   if(room.nomination?.result) return;
   const eligible=room.eligibleVoters || living(room).map(p=>p.id);
   if(eligible.some(id=>!(id in room.votes))) return;
@@ -89,6 +89,8 @@ function tallyBallot(room) {
   }
   const outcome = yes < threshold ? 'below-threshold' : room.block === room.nomination.to ? 'on-block' : yes === room.high && room.tied ? 'tied' : 'lower-total';
   const result = {yes, spare:eligible.length-yes, total:eligible.length, threshold, outcome, block:room.block, high:room.high, tied:room.tied};
+  result.ballots=eligible.map(id=>({id,execute:room.votes[id]}));
+  room.nomination.completedAt=now;
   room.nomination.result=result;
   const n = { ...room.nomination, yes, total: eligible.length }; room.nominations.push(n);
   log(room, `${player(room, n.from).name} nominated ${player(room, n.to).name}: ${yes}/${n.total} voted Execute. ${room.tied ? 'Highest vote tied; nobody is on the block.' : room.block === n.to ? 'Nominee is on the block.' : 'Block unchanged.'}`);
@@ -205,14 +207,14 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       if (room.nominations.some(n => n.to === to.id)) fail('That crew member has already been nominated this light cycle.');
       room.eligibleVoters=living(room).filter(p=>!p.status?.noVote).map(p=>p.id);
       if(!room.eligibleVoters.length) fail('No eligible voters remain. Close nominations without execution.');
-      room.nomination = { from: from.id, to: to.id }; room.votes = {}; room.phase = 'voting'; break;
+      room.nomination = { id:randomUUID(), from: from.id, to: to.id, startedAt:now, pausedMs:0 }; room.votes = {}; room.phase = 'voting'; break;
     }
-    case 'vote': requirePhase(room, 'voting'); requireLiving(room, id); if (!(room.eligibleVoters || living(room).map(p=>p.id)).includes(id)) fail('Your voting is suspended for this light cycle.'); if (typeof data.execute !== 'boolean') fail('Choose Execute or Spare.'); if (id in room.votes) fail('Your ballot is already sealed.'); room.votes[id] = data.execute; tallyBallot(room); break;
+    case 'vote': requirePhase(room, 'voting'); requireLiving(room, id); if (!(room.eligibleVoters || living(room).map(p=>p.id)).includes(id)) fail('Your voting is suspended for this light cycle.'); if (typeof data.execute !== 'boolean') fail('Choose Execute or Spare.'); if (id in room.votes) fail('Your ballot is already sealed.'); room.votes[id] = data.execute; tallyBallot(room,now); break;
     case 'closeVote': {
       requireCaptain(room, id); requirePhase(room, 'voting');
       const eligible=room.eligibleVoters || living(room).map(p=>p.id);
       if (eligible.some(id=>!(id in room.votes))) fail('Wait for every living eligible crew member to vote.');
-      tallyBallot(room);
+      tallyBallot(room,now);
       room.nomination = null; room.votes = {}; room.phase = 'nominations'; break;
     }
     case 'execute': {
@@ -248,12 +250,18 @@ export function act(room, id, action, data = {}, now = Date.now()) {
         room.host = online[0].id; const remaining = room.pause.remaining;
         room.settings.playing = online[0].playing; syncLobby(room);
         room.pause = ['night','voting'].includes(room.phase) && living(room).some(p => !p.online) ? { reason: 'connection', remaining } : null;
-        room.consent = []; if (remaining !== null) room.deadline = now + remaining;
+        room.consent = []; if(!room.pause)resumeBallotClock(room,now); if (remaining !== null) room.deadline = now + remaining;
         log(room, `${online[0].name} accepted command with the connected crew’s agreement.`);
       }
       break;
     }
     default: fail('Unknown command.');
+  }
+}
+function resumeBallotClock(room,now) {
+  if(room.phase==='voting'&&!room.nomination?.completedAt&&room.nomination?.pausedAt!==undefined) {
+    room.nomination.pausedMs=(room.nomination.pausedMs||0)+Math.max(0,now-room.nomination.pausedAt);
+    delete room.nomination.pausedAt;
   }
 }
 export function connection(room, id, online, now = Date.now()) {
@@ -262,10 +270,11 @@ export function connection(room, id, online, now = Date.now()) {
     if (!room.pause) room.pause = { reason: id === room.host ? 'captain' : 'connection', remaining: room.deadline ? Math.max(0, room.deadline - now) : null };
     else if (id === room.host) room.pause.reason = 'captain';
     room.consent = [];
+    if(room.phase==='voting'&&!room.nomination?.completedAt&&room.nomination?.pausedAt===undefined)room.nomination.pausedAt=now;
   }
   if(room.phase==='orders'&&crew(room).every(p=>p.acknowledged&&p.online)&&player(room,room.host).online) startNight(room,now);
   if (room.pause && player(room, room.host).online && (!['night','voting'].includes(room.phase) || living(room).every(p => p.online))) {
-    const remaining = room.pause.remaining; room.pause = null; room.consent = []; if (remaining !== null) room.deadline = now + remaining;
+    const remaining = room.pause.remaining; room.pause = null; room.consent = []; if(!room.pause)resumeBallotClock(room,now); if (remaining !== null) room.deadline = now + remaining;
   }
 }
 export function project(room, id) {
@@ -279,6 +288,6 @@ export function project(room, id) {
     me: { id, playing: me.playing, alive: me.alive, powerRole:me.revealed?powerRole(me):null, echo:me.revealed&&me.role==='echo'?{spent:!!me.echoSpent,role:me.echoRole||(me.alive?me.echoPending?.role:null)||null,pending:me.alive&&!!me.echoPending}:undefined, role: me.revealed || room.phase === 'victory' ? me.role : null, revealed: !!me.revealed, inherited: me.inherited, reports: me.revealed ? me.reports : [], acknowledged: me.acknowledged, stationSubmitted: !!room.nightChoices[id], ballot: id in room.votes ? room.votes[id] : null, adjacent: adjacent(room, id), eligibleVote:me.alive&&!(me.status?.noVote), orders: { ability:abilityView(room,me), hunt:huntView(room,me), usedOnce:me.revealed&&me.alive?me.usedOnce:undefined, defenceSpent:me.revealed&&me.alive&&powerRole(me)==='sentinel'?me.sentinelUsed:undefined, boundName:me.revealed&&me.alive&&me.boundId?player(room,me.boundId).name:null, restrictions:me.alive?{mute:!!me.status.mute,noVote:!!me.status.noVote}:{} } },
     hollow: hollow ? { members: living(room).filter(p => canHunt(p.role)).map(p => ({ id: p.id, target: room.phase === 'night' ? room.nightChoices[p.id]?.[0] ?? null : null })), lockedTarget: room.phase === 'night' ? room.lockedTarget : null } : null,
     balance: factionLimits(room.settings.playerCount), unused: overseer || room.phase === 'victory' ? room.unused ?? [] : undefined,
-    log: room.log.slice(-50), nomination: room.nomination, nominations: room.nominations, block: room.block, high: room.high, tied: room.tied, eligibleCount:room.phase==='voting'?(room.eligibleVoters||living(room).map(p=>p.id)).length:living(room).filter(p=>!p.status?.noVote).length, votesCast: Object.keys(room.votes).length, winner: room.winner, winnerId:room.phase==='victory'?room.winnerId:undefined, lastDeaths: room.lastDeaths
+    log: room.log.slice(-50), nomination: room.nomination, nominations: room.nominations, block: room.block, high: room.high, tied: room.tied, eligibleCount:room.phase==='voting'?(room.eligibleVoters||living(room).map(p=>p.id)).length:living(room).filter(p=>!p.status?.noVote).length, voters:room.phase==='voting'?(room.eligibleVoters||living(room).map(p=>p.id)).map(id=>({id,voted:Object.hasOwn(room.votes,id)})):[], votesCast: Object.keys(room.votes).length, winner: room.winner, winnerId:room.phase==='victory'?room.winnerId:undefined, lastDeaths: room.lastDeaths
   };
 }

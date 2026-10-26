@@ -10,7 +10,7 @@ function ui(name, state, extra = {}) {
   const end = source.indexOf('\nfunction ', start + 1);
   const context = vm.createContext({ state, socket:{connected:true}, ROLES, isHollow,
     esc: value => String(value ?? '').replaceAll('<','&lt;').replaceAll('>','&gt;'),
-    avatar: () => '', icon: () => '', button: () => '', cycleText: text => text, ...extra });
+    avatar: () => '', icon: () => '', button: () => '', ballotClock:()=>'',ballotCards:()=>'',revealVotes:false, cycleText: text => text, ...extra });
   vm.runInContext(source.slice(start, end), context);
   return (...args) => context[name](...args);
 }

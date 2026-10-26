@@ -13,6 +13,7 @@ for (const room of await store.load()) {
   ensureAvatars(room);
   room.players.forEach(p => { p.online = false; });
   room.pause = { reason: 'captain', remaining: room.pause?.remaining ?? (room.deadline ? Math.max(0, room.deadline - room.updatedAt) : null) }; room.consent = [];
+  if(room.phase==='voting'&&!room.nomination?.completedAt&&room.nomination?.startedAt!==undefined)room.nomination.pausedAt??=room.updatedAt;
   rooms.set(room.code, room);
 }
 const server = http.createServer(async (req, res) => {
