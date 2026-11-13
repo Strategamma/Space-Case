@@ -1,7 +1,6 @@
-Goal: show ballot participation live and flip individual choices only after every eligible voter submits.
-Scope: server-filtered voter roster, completed per-person ballots/history, readable outcome messages and an elapsed voting clock; existing discussion/dark countdowns unchanged.
-Approach: publish only IDs/status while voting; persist choices on the completed result; animate cards on live completion, not reconnect/re-render. Freeze elapsed time through pauses and stop at completion. No automatic ballot or timeout choice.
-Risks: early leakage through nested projections/history; excluded voters; repeat animations; stale restored ballots; timer pause/restart behavior.
-Verification: adversarial projections, frozen eligibility, tally outcomes, restoration/pause clocks, real six-client ballot and 320/390px browser animation/privacy checks; full Node 24 check/tests.
-
-State: implemented locally. Node 24 check and full 268-test suite passed; added projection indistinguishability check plus final targeted checks. Real six-client browser test verified hidden choices before completion, all six individual cards after completion, ballot-flip animation, tally and no overflow at 320/390. Physical devices and deployment remain unverified.
+Goal: restore saved seats after a transport reconnect so launch does not remain blocked.
+Scope: client authentication guard, explicit offline crew labels, regression tests and PWA cache update.
+Approach: associate authenticated state with its Socket.IO connection ID; retained UI state must not suppress resume on a new connection. Preserve seat authorization and retry behavior.
+Risks: stale state masking failed resume; duplicate resume/takeover; installed clients retaining the old shell.
+Verification: reproduce retained-state reconnect and retry with client tests; six-peer disconnect/resume/launch transport test; check, tests and PWA shell validation. Live session and physical devices remain separate.
+State: implemented locally; Node 24 check and all 271 tests passed, including retained-state recovery/retry, offline labels, six-peer launch after reconnect, and versioned PWA imports. Diff check passed. Responsive browser check blocked by Chrome launch SIGABRT; physical-device and live-room recovery unverified. Live app.js contains the original guard. Deployment pending.

@@ -9,17 +9,22 @@ test('client retains credentials on transient resume errors and lost acknowledge
   const pass={code:'ABC123',token:'a'.repeat(64)},other={code:'DEF456',token:'b'.repeat(64)};
   const stored={[pass.code]:pass,[other.code]:other}, timers=[];
   let reply={ok:false,code:'RETRY',error:'save temporarily unavailable'};
-  const context=vm.createContext({session:pass,state:null,resumePending:false,resumeTimer:null,resumeAttempts:0,sessionMoved:false,
+  const context=vm.createContext({session:pass,state:null,seatedSocketId:null,resumePending:false,resumeTimer:null,resumeAttempts:0,sessionMoved:false,
     save(){},clearTimeout(){},setTimeout(fn){timers.push(fn)},toast(){},render(){},
     retainPass(value){context.session=value},discardPass(code){delete stored[code]},
-    socket:{connected:true,timeout(){return this},emit(event,data,callback){callback(null,reply)}}});
+    socket:{id:'first',connected:true,timeout(){return this},emit(event,data,callback){callback(null,reply)}}});
   vm.runInContext(extract('resumeVoyage'),context);
+  // The game remains visible after a drop, but the new socket has no seat yet.
+  context.state={phase:'lobby'};context.seatedSocketId='previous';
   assert.equal(await context.resumeVoyage(),false);assert.equal(stored[pass.code],pass);assert.equal(timers.length,1);
   reply={ok:true,session:pass};assert.equal(await context.resumeVoyage(),true);assert.equal(context.resumeAttempts,0);
+  context.seatedSocketId=context.socket.id;
+  assert.equal(await context.resumeVoyage(),false); // Already seated on this connection.
+  context.socket.id='reconnected';
   reply={ok:false,code:'PASS_INVALID',error:'expired'};assert.equal(await context.resumeVoyage(),false);
   assert.equal(stored[pass.code],undefined);assert.equal(stored[other.code],other);
   stored[pass.code]=pass;
-  context.socket.emit=(event,data,callback)=>{context.state={phase:'night'};callback(new Error('ack lost'));};
+  context.socket.emit=(event,data,callback)=>{context.state={phase:'night'};context.seatedSocketId=context.socket.id;callback(new Error('ack lost'));};
   assert.equal(await context.resumeVoyage(),true);assert.equal(stored[pass.code],pass);
 });
 
@@ -71,4 +76,13 @@ test('nomination portraits enforce living/unused seats, preserve valid choices a
 test('game setup and nominations contain no native dropdown controls',()=>{
   assert.doesNotMatch(source,/<select\b|<option\b/);
   assert.match(source,/type="radio" name="discussion"/);assert.match(source,/type="radio" name="night"/);
+});
+
+test('crew board labels offline seats even when their old lobby berth remains',()=>{
+  const person={id:'a',name:'Crew',playing:true,alive:true,online:false,avatar:0};
+  const context=vm.createContext({state:{phase:'lobby',players:[person],host:'a',me:{id:'a'}},esc:String,avatar:()=>'',icon:()=>''});
+  vm.runInContext(extract('crewBoard'),context);
+  assert.match(context.crewBoard(),/DISCONNECTED/);
+  person.online=true;
+  assert.doesNotMatch(context.crewBoard(),/DISCONNECTED/);
 });

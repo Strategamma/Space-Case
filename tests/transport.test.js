@@ -51,3 +51,30 @@ test('real six-client voyage: secret roles, authentication, reconnect and restar
   for(const path of shell)assert.equal((await fetch(server.url+path)).ok,true,`PWA shell resource ${path}`);
   assert.match((await fetch(server.url+'/assets/space-grotesk-regular.ttf')).headers.get('content-type'),/font/);
 });
+
+test('lobby disconnect blocks launch until saved pass restores the same crew seat', async t=>{
+  const server=await boot(join(await mkdtemp(join(tmpdir(),'spacecase-launch-reconnect-')),'rooms.json'));
+  const peers=[];
+  t.after(async()=>{peers.forEach(peer=>peer.close());await server.stop();});
+  const captain=new Peer(server.url);peers.push(captain);
+  const made=await captain.command('create',{name:'Captain'});
+  let pass;
+  for(let i=1;i<6;i++){
+    const peer=new Peer(server.url);peers.push(peer);
+    const joined=await peer.command('join',{code:made.session.code,name:'Crew '+i});
+    assert.equal(joined.ok,true);pass=joined.session;
+  }
+  await captain.wait(s=>s.players.length===6);
+  const seat=captain.state.players.find(p=>p.name==='Crew 5').id;
+  peers[5].close();
+  await captain.wait(s=>s.players.some(p=>p.id===seat&&!p.online));
+  assert.match((await captain.command('start')).error,/crew members to reconnect/);
+  const returned=new Peer(server.url);peers.push(returned);await returned.ready;
+  // A transport connection alone does not restore membership.
+  assert.equal((await captain.command('start')).ok,false);
+  assert.equal((await returned.command('resume',pass)).ok,true);
+  await captain.wait(s=>s.players.every(p=>p.online));
+  assert.equal(captain.state.players.length,6);
+  assert.equal((await captain.command('start')).ok,true);
+  await returned.wait(s=>s.phase==='orders');assert.equal(returned.state.me.id,seat);
+});
