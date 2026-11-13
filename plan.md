@@ -1,6 +1,6 @@
-Goal: acknowledgement must not block the first dark cycle.
-Scope: Captain start control, server readiness validation, related guidance and regression tests.
-Approach: let the Captain begin from sealed orders without any acknowledgement; keep private reveal, connection safety, and existing automatic start when everyone acknowledges.
-Risks: exposing unread roles, starting with offline crew, stale open private dialogs, mixed cached assets.
-Verification: start with zero acknowledgements, Captain authorization and offline guard, private roles remain sealed until reveal; targeted UI/engine tests, full check/tests and PWA import validation.
-State: implemented locally. Node 24 check and all 272 tests passed; six-client transport test additionally confirms Captain starts with zero acknowledgements and unread roles remain sealed. PWA module graph and diff checks passed. PROJECT.md is 491 words. Deployment and physical-device verification remain pending.
+Goal: make the Captain’s current action obvious on the main game screen.
+Scope: phase-aware Captain action panel above the crew content, clear blocked states, existing Command for secondary controls; no rule changes.
+Approach: reuse existing command actions and confirmation flows; show only to the Captain, keep nomination/settings forms single-mounted, preserve private role data and server authorization.
+Risks: duplicated action drift, disabled-button explanations, narrow-phone wrapping, cached shell mismatches.
+Verification: phase/Captain/blocked-state rendering tests, existing engine/transport tests, 320/390px interactive browser checks and PWA import graph.
+State: implemented locally. Node 24 check and all 273 tests passed; targeted client tests cover phase actions, authorization, offline/pause and ballot blockers, and single nomination form. Actual six-client browser flow verified main-screen first-night start, discussion timer/nominations, ballot completion/continuation, close confirmation, and night two. Phone checks at 320×720 and 390×844 passed with 48px action targets and no overflow. PWA graph and diff checks passed. Screenshot: /tmp/spacecase-captain-actions-390.png. Hosted deployment and physical devices remain unverified.

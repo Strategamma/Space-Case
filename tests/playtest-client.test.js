@@ -98,3 +98,35 @@ test('Captain can begin sealed orders without acknowledgement; offline crew stil
   assert.match(context.commandPanel(),/Waiting for disconnected crew/);
   context.state.me.id='1';assert.doesNotMatch(context.commandPanel(),/data-action="night"/);
 });
+
+test('Captain main-screen actions follow the phase without duplicating nomination forms',()=>{
+  const members=Array.from({length:6},(_,i)=>({id:String(i),name:'Crew '+i,playing:true,alive:true,online:true}));
+  const state={phase:'orders',day:1,host:'0',me:{id:'0'},players:members,eligibleCount:6,votesCast:0};
+  const context=vm.createContext({state,panel:'crew',socket:{connected:true},esc:value=>String(value).replaceAll('<','&lt;'),icon:()=>'',
+    button:(text,action,style,attributes='')=>`<button data-action="${action}" ${attributes}>${text}</button>`,
+    nominationPicker:()=>'<form id="nomination-form"></form>'});
+  vm.runInContext(extract('captainNextAction')+'\n'+extract('commandPanel'),context);
+  assert.match(context.captainNextAction(),/data-action="night" data-captain-action >Begin dark cycle 1/);
+  members[1].online=false;members[1].name='<offline>';
+  assert.match(context.captainNextAction(),/data-action="night" data-captain-action disabled/);
+  assert.match(context.captainNextAction(),/Waiting for connection: &lt;offline>/);
+  members[1].online=true;
+  state.phase='discussion';assert.match(context.captainNextAction(),/data-action="nominations"[^>]*>Open nominations/);
+  state.pause={reason:'connection'};assert.match(context.captainNextAction(),/data-action="nominations" data-captain-action disabled/);
+  state.pause=null;context.socket.connected=false;assert.match(context.captainNextAction(),/Connection interrupted/);
+  context.socket.connected=true;state.phase='nominations';
+  assert.match(context.captainNextAction(),/data-action="command-jump"[^>]*>Nominate a crew member/);
+  assert.match(context.captainNextAction(),/data-action="end-nominations"/);
+  assert.doesNotMatch(context.captainNextAction()+context.commandPanel(),/<form/);
+  context.panel='command';assert.equal(context.captainNextAction(),'');
+  assert.equal((context.commandPanel().match(/id="nomination-form"/g)||[]).length,1);
+  context.panel='crew';state.phase='voting';state.votesCast=4;
+  assert.match(context.captainNextAction(),/2 ballots still needed/);
+  assert.match(context.captainNextAction(),/data-action="closeVote" data-captain-action disabled/);
+  state.votesCast=6;state.nomination={result:{}};
+  assert.match(context.captainNextAction(),/data-action="closeVote" data-captain-action >/);
+  state.phase='aftermath';assert.match(context.captainNextAction(),/Begin dark cycle 2/);
+  state.phase='night';assert.doesNotMatch(context.captainNextAction(),/data-action="night"/);
+  state.phase='victory';assert.match(context.captainNextAction(),/data-action="rematch"/);
+  state.me.id='1';assert.equal(context.captainNextAction(),'');
+});
