@@ -86,3 +86,15 @@ test('crew board labels offline seats even when their old lobby berth remains',(
   person.online=true;
   assert.doesNotMatch(context.crewBoard(),/DISCONNECTED/);
 });
+
+test('Captain can begin sealed orders without acknowledgement; offline crew still block the control',()=>{
+  const members=Array.from({length:6},(_,i)=>({id:String(i),name:'Crew '+i,playing:true,alive:true,online:true,acknowledged:false}));
+  const context=vm.createContext({panel:'command',state:{phase:'orders',host:'0',me:{id:'0'},players:members},
+    esc:String,icon:()=>'',button:(text,action,style,attributes='')=>`<button data-action="${action}" ${attributes}>${text}</button>`});
+  vm.runInContext(extract('commandPanel'),context);
+  assert.match(context.commandPanel(),/data-action="night" >Begin dark cycle/);
+  members[1].online=false;
+  assert.match(context.commandPanel(),/data-action="night" disabled/);
+  assert.match(context.commandPanel(),/Waiting for disconnected crew/);
+  context.state.me.id='1';assert.doesNotMatch(context.commandPanel(),/data-action="night"/);
+});

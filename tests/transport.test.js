@@ -77,4 +77,8 @@ test('lobby disconnect blocks launch until saved pass restores the same crew sea
   assert.equal(captain.state.players.length,6);
   assert.equal((await captain.command('start')).ok,true);
   await returned.wait(s=>s.phase==='orders');assert.equal(returned.state.me.id,seat);
+  assert.equal(captain.state.players.filter(p=>p.acknowledged).length,0);
+  assert.equal((await captain.command('night')).ok,true);
+  await returned.wait(s=>s.phase==='night');
+  assert.equal(returned.state.day,1);assert.equal(returned.state.me.role,null);
 });

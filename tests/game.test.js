@@ -89,10 +89,20 @@ test('only Captain can configure or advance phases; role dependencies validated'
   assert.throws(() => command(room.host,'settings',{...room.settings,roles:{...room.settings.roles,engineer:1}}),/at least two/);
   assert.throws(() => command(room.host,'settings',{...room.settings,roles:{...room.settings.roles,xenobiologist:0,observer:1}}),/possible Xenobiologist/);
 });
-test('every crew member acknowledges orders before first night', () => {
+test('Captain can start first night without acknowledgements while roles remain privately sealed', () => {
   const { room, command } = fixture(); command(room.host,'start');
-  assert.throws(() => command(room.host,'night'),/acknowledge/);
-  room.players.forEach(p => { command(p.id,'reveal'); command(p.id,'acknowledge'); }); assert.equal(room.phase,'night');
+  assert.throws(() => command(room.players[1].id,'night'),/Captain/);
+  connection(room,room.players[1].id,false);
+  assert.throws(() => command(room.host,'night'),/reconnect/);
+  connection(room,room.players[1].id,true);
+  command(room.host,'night');
+  assert.equal(room.phase,'night');assert.equal(room.day,1);
+  assert.ok(room.players.every(p=>!p.acknowledged&&!p.revealed));
+  for(const p of room.players) {
+    const view=project(room,p.id);assert.equal(view.me.role,null);assert.deepEqual(view.me.reports,[]);
+    assert.ok(view.players.every(p=>p.role===undefined));
+  }
+  command(room.players[1].id,'reveal');assert.ok(project(room,room.players[1].id).me.role);
 });
 test('first night identifies Hollow but never kills', () => {
   const f = fixture(9,2); f.start();

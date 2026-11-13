@@ -186,7 +186,7 @@ export function act(room, id, action, data = {}, now = Date.now()) {
       break;
     case 'night': {
       requireCaptain(room, id); requirePhase(room, 'orders', 'aftermath');
-      if (room.phase === 'orders' && crew(room).some(p => !p.acknowledged)) fail('Every crew member must acknowledge their sealed orders.');
+      if (room.phase === 'orders' && crew(room).some(p => !p.online)) fail('Wait for all crew members to reconnect.');
       startNight(room, now); break;
     }
     case 'ability': submitAbility(room,me,data,now); break;

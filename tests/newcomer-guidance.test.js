@@ -44,7 +44,7 @@ test('private guidance respects connection loss, death, pauses, ballot and speec
   state.phase = 'discussion'; c.restrictions.mute = true;
   assert.match(guide(c), /speech is restricted/);
   state.phase = 'orders'; state.me.acknowledged = true;
-  assert.match(guide(c), /starts automatically/);
+  assert.match(guide(c), /Captain can begin/);
 });
 
 test('ballot explains frozen eligible threshold, earlier highest total and execution timing', () => {
